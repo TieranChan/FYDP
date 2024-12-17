@@ -1,2 +1,3 @@
 Note on APACHE
--> Root folder, everything stored in /var/www/html
+-> Put all html pages in /var/www/html/marinemuseuminfo.com/public_html
+Access with domainname/doc.html
