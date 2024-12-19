@@ -129,7 +129,7 @@ def open_window_6(title, description, image_titles, biblio_ref, location, size, 
         font=FONT,
         fg=BUTTON_TEXT,
         bg=BUTTON_COLOR,
-        command=lambda: QR.open_third_window(title)  # Opens the new window and closes current
+        command=lambda: QR.open_save_HTML(title)  # Opens the new window and closes current
     )
     send_button.pack(pady=20)
 

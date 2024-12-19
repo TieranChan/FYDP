@@ -15,7 +15,7 @@ FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
 FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 
 def generate_html_page(title, description="", image_titles=None, biblio_ref=None, location="", size="", tags=None):
-    """Generate an HTML page based on the provided data."""
+    """Generate an HTML page and transition to the options window."""
     if image_titles is None:
         image_titles = []
     if biblio_ref is None:
@@ -96,29 +96,16 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)
         print(f"HTML page saved to {file_path}")
-        webbrowser.open_new_tab(file_path)  # Open the saved file in a browser
-
-
-def open_html_page(title):
-    """Generate and save an HTML file."""
-    description = "Example description for the selected title."
-    image_titles = ["image1.jpg", "image2.png"]
-    biblio_ref = ["Reference 1", "Reference 2"]
-    location = "Section A, Shelf 3"
-    size = "Length: 10cm, Width: 5cm, Height: 3cm"
-    tags = ["tag1", "tag2", "tag3"]
-
-    generate_html_page(title, description, image_titles, biblio_ref, location, size, tags)
-
+        open_options_window(title, file_path)  # Transition to the options window
 
 def generate_qr(data):
-    """Generate a QR code and return it as a PhotoImage with fixed dimensions of 3cm x 3cm."""
+    """Generate a QR code and return it as a PhotoImage."""
     qr = segno.make(data)  # Create QR code
     buffer = BytesIO()
     qr.save(buffer, kind='png', scale=10)  # Generate high-quality QR code
     buffer.seek(0)
     image = Image.open(buffer)
-    image = image.resize((113, 113), Image.Resampling.LANCZOS)  # Resize to 3cm x 3cm (113px at 96dpi)
+    image = image.resize((200, 200), Image.Resampling.LANCZOS)  # Resize for display
     return ImageTk.PhotoImage(image)
 
 def save_qr_to_file(data):
@@ -128,84 +115,15 @@ def save_qr_to_file(data):
     if file_path:
         qr.save(file_path, kind='png', scale=10)
         print(f"QR Code saved to {file_path}")
-def open_html_page(title):
-    """Generate and save an HTML file."""
-    description = "Example description for the selected title."
-    image_titles = ["image1.jpg", "image2.png"]
-    biblio_ref = ["Reference 1", "Reference 2"]
-    location = "Section A, Shelf 3"
-    size = "Length: 10cm, Width: 5cm, Height: 3cm"
-    tags = ["tag1", "tag2", "tag3"]
 
-    generate_html_page(title, description, image_titles, biblio_ref, location, size, tags)
-
-def open_second_window(title):
-    # Open the second window
-    second_window = Toplevel()
-    second_window.title("QR Code Generator - Step 2")
-    second_window.configure(bg=BG_COLOR)
-    second_window.geometry("300x400")  # Increased size to accommodate new buttons
-
-    # Title display
-    tk.Label(
-        second_window,
-        text=f"Title: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
-    ).pack(pady=10)
-
-    # HTML information display
-    tk.Label(
-        second_window,
-        text="HTML: html.com",
-        font=FONT,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
-    ).pack(pady=5)
-
-    # Generate and display QR code
-    qr_image = generate_qr(title)  # Generate QR code using the title
-    qr_label = tk.Label(second_window, image=qr_image, bg=BG_COLOR)
-    qr_label.image = qr_image  # Keep a reference to avoid garbage collection
-    qr_label.pack(pady=10)
-
-    # Print button (placeholder action)
-    tk.Button(
-        second_window,
-        text="Print",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
-        fg="white",
-        activebackground=TEXT_COLOR,
-        activeforeground="white",
-        padx=10,
-        pady=5
-    ).pack(pady=10)
-
-    # Button to see HTML and open the HTML example window
-    tk.Button(
-        second_window,
-        text="Generate HTML",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
-        fg="white",
-        activebackground=TEXT_COLOR,
-        activeforeground="white",
-        padx=10,
-        pady=5,
-        command=lambda: open_html_page(title)
-    ).pack(pady=5)
-
-
-def open_third_window(title):
-    # Open the third window
+def open_save_HTML(title):
+    """Open a window to prompt the user to save the HTML file."""
     third_window = Toplevel()
-    third_window.title("QR Code Generator - Step 3")
+    third_window.title("Save HTML File")
     third_window.configure(bg=BG_COLOR)
-    third_window.geometry("300x300")
+    third_window.geometry("300x200")
 
-    # Title display
+    # Display the title
     tk.Label(
         third_window,
         text=f"Title: {title}",
@@ -214,10 +132,10 @@ def open_third_window(title):
         bg=BG_COLOR
     ).pack(pady=10)
 
-    # Button to see HTML and open the HTML example window
+    # Button to save the HTML file
     tk.Button(
         third_window,
-        text="Generate HTML",
+        text="Save HTML File",
         font=FONT_BOLD,
         bg=BUTTON_COLOR,
         fg="white",
@@ -225,12 +143,42 @@ def open_third_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_html_page(title)  # Pass the title to generate HTML
-    ).pack(pady=5)
+        command=lambda: [generate_html_page(title), third_window.destroy()]  # Generate HTML and close this window
+    ).pack(pady=20)
 
-    # Button to open window 2 when clicked
+def open_options_window(title, html_path):
+    """Open a window with options after saving the HTML file."""
+    options_window = Toplevel()
+    options_window.title("Options - Next Steps")
+    options_window.configure(bg=BG_COLOR)
+    options_window.geometry("300x300")
+
+    # Display the title
+    tk.Label(
+        options_window,
+        text=f"Title: {title}",
+        font=FONT_BOLD,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Button to view the saved HTML file
     tk.Button(
-        third_window,
+        options_window,
+        text="View HTML",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: webbrowser.open_new_tab(html_path)
+    ).pack(pady=10)
+
+    # Button to generate QR code
+    tk.Button(
+        options_window,
         text="Generate QR Code",
         font=FONT_BOLD,
         bg=BUTTON_COLOR,
@@ -239,27 +187,13 @@ def open_third_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_second_window(title)
-    ).pack(pady=5)
+        command=lambda: open_qr_code_window(title, html_path)
+    ).pack(pady=10)
 
-    # Delete button that triggers the confirmation popup
+    # Additional placeholder options
     tk.Button(
-        third_window,
-        text="Delete",
-        font=FONT_BOLD,
-        bg="red",
-        fg="white",
-        activebackground="#D32F2F",
-        activeforeground="white",
-        padx=10,
-        pady=5,
-        command=lambda: confirm_delete(title)
-    ).pack(pady=5)
-
-    # Modify button
-    tk.Button(
-        third_window,
-        text="Modify",
+        options_window,
+        text="Modify Entry",
         font=FONT_BOLD,
         bg=BUTTON_COLOR,
         fg="white",
@@ -267,12 +201,71 @@ def open_third_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: Database.open_window_4(title)  # Call to open_window_4 from Database module
-    ).pack(pady=5)
+        command=lambda: Database.open_window_4(title)
+    ).pack(pady=10)
 
+def open_qr_code_window(title, html_path):
+    """Open a window to display the QR code with Save and Print options."""
+    qr_window = Toplevel()
+    qr_window.title("QR Code Viewer")
+    qr_window.configure(bg=BG_COLOR)
+    qr_window.geometry("400x550")
 
-def confirm_delete(title):
-    # Create a confirmation popup window
+    # Display the title
+    tk.Label(
+        qr_window,
+        text=f"Title: {title}",
+        font=FONT_BOLD,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Display the HTML path
+    tk.Label(
+        qr_window,
+        text=f"HTML Path: {html_path}",
+        font=FONT,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR,
+        wraplength=380,  # Ensure long paths wrap nicely
+    ).pack(pady=10)
+
+    # Generate and display the QR code
+    qr_image = generate_qr(html_path)  # Generate QR code for the HTML path
+    qr_label = tk.Label(qr_window, image=qr_image, bg=BG_COLOR)
+    qr_label.image = qr_image  # Keep a reference to avoid garbage collection
+    qr_label.pack(pady=20)
+
+    # Save button
+    tk.Button(
+        qr_window,
+        text="Save",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: save_qr_to_file(html_path)
+    ).pack(pady=10)
+
+    # Print button (placeholder for actual print functionality)
+    tk.Button(
+        qr_window,
+        text="Print",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: print(f"Printing QR Code for {html_path}")  # Replace with actual print logic
+    ).pack(pady=10)
+
+def confirm_delete(title, parent_window):
+    """Display a confirmation popup for deleting an entry."""
     confirm_window = Toplevel()
     confirm_window.title("Confirm Delete")
     confirm_window.configure(bg=BG_COLOR)
@@ -281,25 +274,25 @@ def confirm_delete(title):
     # Confirmation message
     tk.Label(
         confirm_window,
-        text=f"Are you sure you want to delete '{title}' from the database?",
+        text=f"Are you sure you want to delete '{title}'?",
         font=FONT,
         fg=TEXT_COLOR,
         bg=BG_COLOR,
         wraplength=280,  # Ensure text wraps nicely
     ).pack(pady=10)
 
-    # Yes button - Placeholder command for delete action
+    # Yes button - Placeholder for actual delete logic
     tk.Button(
         confirm_window,
         text="Yes",
         font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        bg="red",
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground="#D32F2F",
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: [print(f"{title} deleted"), confirm_window.destroy()]  # Replace with actual delete logic
+        command=lambda: [delete_entry(title), confirm_window.destroy(), parent_window.destroy()]  # Close both windows
     ).pack(side="left", padx=20, pady=10)
 
     # No button - Closes the confirmation window
@@ -316,10 +309,15 @@ def confirm_delete(title):
         command=confirm_window.destroy
     ).pack(side="right", padx=20, pady=10)
 
-def main():
+def delete_entry(title):
+    """Delete the entry from the database or file system."""
+    #TODO
+    print(f"Entry '{title}' deleted.")  # Replace with actual delete logic
+
+def open_select_window():
     # Create the main window
     root = tk.Tk()
-    root.title("QR Code Generator - Step 1")
+    root.title("Select title")
     root.configure(bg=BG_COLOR)
     root.geometry("600x250")
 
@@ -364,7 +362,7 @@ def main():
         selected_indices = title_listbox.curselection()
         if selected_indices:
             selected_title = title_listbox.get(selected_indices[0])
-            open_third_window(selected_title)
+            open_what_to_do(selected_title)
         else:
             print("No title selected")  # Placeholder for no selection
 
@@ -383,5 +381,94 @@ def main():
 
     root.mainloop()
 
+def open_what_to_do(title):
+    """Open a window to display options for the selected title."""
+    what_to_do_window = Toplevel()
+    what_to_do_window.title("What to Do Next")
+    what_to_do_window.configure(bg=BG_COLOR)
+    what_to_do_window.geometry("300x250")
+
+    # Display the title
+    tk.Label(
+        what_to_do_window,
+        text=f"Title: {title}",
+        font=FONT_BOLD,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Modify/Delete Button
+    tk.Button(
+        what_to_do_window,
+        text="Modify/Delete Entry",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: open_modify_delete_window(title)
+    ).pack(pady=10)
+
+    # Generate HTML/QR Button
+    tk.Button(
+        what_to_do_window,
+        text="Generate HTML/QR",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: open_save_HTML(title)
+    ).pack(pady=10)
+
+def open_modify_delete_window(title):
+    """Open a window for modifying or deleting the selected entry."""
+    modify_delete_window = Toplevel()
+    modify_delete_window.title("Modify/Delete Entry")
+    modify_delete_window.configure(bg=BG_COLOR)
+    modify_delete_window.geometry("300x200")
+
+    # Display the title
+    tk.Label(
+        modify_delete_window,
+        text=f"Modify/Delete: {title}",
+        font=FONT_BOLD,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Modify Button
+    tk.Button(
+        modify_delete_window,
+        text="Modify Entry",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        activebackground=TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: Database.open_window_4(title)  # Call modify logic
+    ).pack(pady=10)
+
+    # Delete Button
+    tk.Button(
+        modify_delete_window,
+        text="Delete Entry",
+        font=FONT_BOLD,
+        bg="red",
+        fg="white",
+        activebackground="#D32F2F",
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: confirm_delete(title, modify_delete_window)
+    ).pack(pady=10)
+
+
 if __name__ == "__main__":
-    main()
+    open_select_window()
