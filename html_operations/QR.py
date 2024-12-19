@@ -1,10 +1,13 @@
 import tkinter as tk
-from tkinter import Toplevel, filedialog
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox
 from PIL import Image, ImageTk
 from io import BytesIO
 import segno
 import webbrowser
 from database_operations import Database
+import mysql.connector
+from tkinter import messagebox
+
 
 # Global color scheme
 BG_COLOR = "#E0F0FD"  # Light blue background
@@ -15,7 +18,11 @@ FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
 FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 
 def generate_html_page(title, description="", image_titles=None, biblio_ref=None, location="", size="", tags=None):
-    """Generate an HTML page and transition to the options window."""
+    """Generate an HTML page, ensuring None values are handled properly."""
+    # Helper function to safely handle None values
+    def safe(value, default="No data provided"):
+        return value if value is not None else default
+
     if image_titles is None:
         image_titles = []
     if biblio_ref is None:
@@ -29,7 +36,7 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{title}</title>
+        <title>{safe(title)}</title>
         <style>
             body {{
                 font-family: Arial, sans-serif;
@@ -54,35 +61,35 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
         </style>
     </head>
     <body>
-        <h1>{title}</h1>
+        <h1>{safe(title)}</h1>
         <div class="section">
             <h2>Description</h2>
-            <p>{description}</p>
+            <p>{safe(description)}</p>
         </div>
         <div class="section">
             <h2>Images</h2>
-            {''.join(f'<div class="image"><p>{img}</p></div>' for img in image_titles) if image_titles else '<p>No images provided</p>'}
+            {''.join(f'<div class="image"><p>{safe(img)}</p></div>' for img in image_titles) if image_titles else '<p>No images provided</p>'}
         </div>
         <div class="section">
             <h2>Bibliographic References</h2>
             <div class="biblio">
                 <ul>
-                    {''.join(f'<li>{ref}</li>' for ref in biblio_ref) if biblio_ref else '<li>No references provided</li>'}
+                    {''.join(f'<li>{safe(ref)}</li>' for ref in biblio_ref) if biblio_ref else '<li>No references provided</li>'}
                 </ul>
             </div>
         </div>
         <div class="section">
             <h2>Location</h2>
-            <p>{location if location else 'No location provided'}</p>
+            <p>{safe(location)}</p>
         </div>
         <div class="section">
             <h2>Size</h2>
-            <p>{size if size else 'No size provided'}</p>
+            <p>{safe(size)}</p>
         </div>
         <div class="section">
             <h2>Tags</h2>
             <div class="tags">
-                {', '.join(tags) if tags else 'No tags provided'}
+                {', '.join(safe(tag) for tag in tags) if tags else 'No tags provided'}
             </div>
         </div>
     </body>
@@ -97,6 +104,7 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
             file.write(html_content)
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
+
 
 def generate_qr(data):
     """Generate a QR code and return it as a PhotoImage."""
@@ -113,6 +121,7 @@ def save_qr_to_file(data):
     qr = segno.make(data)  # Generate QR code
     file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")], title="Save QR Code")
     if file_path:
+        qr.save(file_path, kind='png', scale=10)
         qr.save(file_path, kind='png', scale=10)
         print(f"QR Code saved to {file_path}")
 
@@ -315,71 +324,98 @@ def delete_entry(title):
     print(f"Entry '{title}' deleted.")  # Replace with actual delete logic
 
 def open_select_window():
-    # Create the main window
     root = tk.Tk()
-    root.title("Select title")
-    root.configure(bg=BG_COLOR)
-    root.geometry("600x250")
+    root.title("Select a Title")
+    root.geometry("600x300")
+    root.configure(bg="#E0F0FD")
 
-    # Prompt label
     tk.Label(
         root,
-        text="Select a title that you need information on:",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
-    ).pack(pady=5)
+        text="Select a title to view information:",
+        font=("Arial Rounded MT Bold", 16),
+        bg="#E0F0FD",
+        fg="#0D47A1"
+    ).pack(pady=10)
 
-    # Frame for the listbox and scrollbar
-    list_frame = tk.Frame(root)
-    list_frame.pack(pady=5)
+    # Frame for Listbox and Scrollbar
+    frame = tk.Frame(root)
+    frame.pack(pady=10)
 
-    # Scrollbar for the listbox
-    scrollbar = tk.Scrollbar(list_frame)
+    scrollbar = Scrollbar(frame, orient="vertical")
     scrollbar.pack(side="right", fill="y")
 
-    # Listbox for selecting titles
-    title_listbox = tk.Listbox(
-        list_frame,
-        font=FONT,
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
-        selectbackground=BUTTON_COLOR,
-        selectforeground="white",
-        height=5,  # Display 5 items at a time
-        yscrollcommand=scrollbar.set
+    title_listbox = Listbox(
+        frame,
+        width=50,
+        height=10,
+        yscrollcommand=scrollbar.set,
+        font=("Arial", 12)
     )
-    titles = [f"Title {i}" for i in range(1, 21)]  # Example with more titles for scrolling
-    for title in titles:
-        title_listbox.insert("end", title)
-    title_listbox.pack(side="left")
-
-    # Configure the scrollbar to scroll the listbox
+    title_listbox.pack(side="left", fill="y")
     scrollbar.config(command=title_listbox.yview)
 
-    # Search button
+    # Populate the Listbox with titles
+    titles = get_titles()
+    for title in titles:
+        title_listbox.insert("end", title)
+
+def open_select_window():
+    root = tk.Tk()
+    root.title("Select a Title")
+    root.geometry("600x300")
+    root.configure(bg="#E0F0FD")
+
+    tk.Label(
+        root,
+        text="Select a title to view information:",
+        font=("Arial Rounded MT Bold", 16),
+        bg="#E0F0FD",
+        fg="#0D47A1"
+    ).pack(pady=10)
+
+    # Frame for Listbox and Scrollbar
+    frame = tk.Frame(root)
+    frame.pack(pady=10)
+
+    scrollbar = Scrollbar(frame, orient="vertical")
+    scrollbar.pack(side="right", fill="y")
+
+    title_listbox = Listbox(
+        frame,
+        width=50,
+        height=10,
+        yscrollcommand=scrollbar.set,
+        font=("Arial", 12)
+    )
+    title_listbox.pack(side="left", fill="y")
+    scrollbar.config(command=title_listbox.yview)
+
+    # Populate the Listbox with titles
+    titles = get_titles()
+    for title in titles:
+        title_listbox.insert("end", title)
+
+    # Define the on_search function inside open_select_window
     def on_search():
         selected_indices = title_listbox.curselection()
         if selected_indices:
             selected_title = title_listbox.get(selected_indices[0])
-            open_what_to_do(selected_title)
+            open_what_to_do(selected_title)  # Open the "What to Do" window
         else:
-            print("No title selected")  # Placeholder for no selection
+            messagebox.showwarning("No Selection", "Please select a title.")
 
+    # Search button
     tk.Button(
         root,
         text="Search",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
-        fg="white",
-        activebackground=TEXT_COLOR,
-        activeforeground="white",
-        padx=10,
-        pady=5,
-        command=on_search
+        command=on_search,
+        font=("Arial Rounded MT Bold", 14),
+        bg="#96CCF9",
+        fg="white"
     ).pack(pady=10)
 
     root.mainloop()
+
 
 def open_what_to_do(title):
     """Open a window to display options for the selected title."""
@@ -470,5 +506,126 @@ def open_modify_delete_window(title):
     ).pack(pady=10)
 
 
+def get_titles():
+    """Fetch all titles dynamically from all tables with a 'title' column."""
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user=mysql_username,  # Use global variable from login window
+            password=mysql_password,  # Use global variable from login window
+            database="museum"
+        )
+        cursor = connection.cursor()
+
+        # Find all tables with a 'title' column
+        cursor.execute("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
+        """)
+        tables = [row[0] for row in cursor.fetchall()]
+
+        # Retrieve all titles from those tables
+        titles = []
+        for table in tables:
+            cursor.execute(f"SELECT title FROM `{table}`")
+            titles.extend([row[0] for row in cursor.fetchall()])
+
+        return titles
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching titles: {err}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def fetch_data_for_title_dynamic(title):
+    """Fetch all details for a given title from any table dynamically."""
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user=mysql_username,  # Use global variable from login window
+            password=mysql_password,  # Use global variable from login window
+            database="museum"
+        )
+        cursor = connection.cursor()
+
+        # Find all tables with a 'title' column
+        cursor.execute("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
+        """)
+        tables = [row[0] for row in cursor.fetchall()]
+
+        # Search for the title in each table
+        for table in tables:
+            cursor.execute(f"SELECT * FROM `{table}` WHERE title = %s", (title,))
+            result = cursor.fetchone()
+            if result:
+                # Return the data along with the table name
+                return result, table
+        return None, None  # No matching title found
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching data: {err}")
+        return None, None
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def mysql_login_window():
+    """Create a login window for MySQL credentials."""
+    login_window = tk.Tk()
+    login_window.title("MySQL Login")
+    login_window.geometry("300x200")
+    login_window.configure(bg=BG_COLOR)
+
+    tk.Label(
+        login_window,
+        text="Enter MySQL Credentials",
+        font=FONT_BOLD,
+        fg=TEXT_COLOR,
+        bg=BG_COLOR
+    ).pack(pady=10)
+
+    # Username input
+    tk.Label(login_window, text="Username:", font=FONT, bg=BG_COLOR).pack(pady=5)
+    username_entry = tk.Entry(login_window, font=FONT, bg=ENTRY_COLOR)
+    username_entry.pack(pady=5)
+
+    # Password input
+    tk.Label(login_window, text="Password:", font=FONT, bg=BG_COLOR).pack(pady=5)
+    password_entry = tk.Entry(login_window, font=FONT, bg=ENTRY_COLOR, show="*")
+    password_entry.pack(pady=5)
+
+    def submit_credentials():
+        """Retrieve credentials and close the login window."""
+        global mysql_username, mysql_password
+        mysql_username = username_entry.get()
+        mysql_password = password_entry.get()
+        if not mysql_username or not mysql_password:
+            messagebox.showwarning("Input Error", "Both username and password are required!")
+        else:
+            login_window.destroy()
+
+    # Submit button
+    tk.Button(
+        login_window,
+        text="Login",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
+        fg="white",
+        command=submit_credentials
+    ).pack(pady=20)
+
+    login_window.mainloop()
+
+
 if __name__ == "__main__":
-    open_select_window()
+    mysql_username = None
+    mysql_password = None
+    mysql_login_window()  # Prompt for MySQL credentials
+    open_select_window()  # Open the main window after login
+
