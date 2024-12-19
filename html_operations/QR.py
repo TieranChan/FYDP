@@ -17,18 +17,18 @@ TEXT_COLOR = "#0D47A1"  # Deep blue for text
 FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
 FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 
-def generate_html_page(title, description="", image_titles=None, biblio_ref=None, location="", size="", tags=None):
-    """Generate an HTML page, ensuring None values are handled properly."""
-    # Helper function to safely handle None values
+def generate_html_page(data, title):
+    """Generate an HTML page dynamically from the fetched data."""
     def safe(value, default="No data provided"):
-        return value if value is not None else default
+        return value if value else default
 
-    if image_titles is None:
-        image_titles = []
-    if biblio_ref is None:
-        biblio_ref = []
-    if tags is None:
-        tags = []
+    # Extract specific fields if they exist
+    description = safe(data.get("description", ""))
+    location = safe(data.get("location", ""))
+    size = f"H: {safe(data.get('hight'))}, W: {safe(data.get('width'))}, L: {safe(data.get('length'))}"
+    image_titles = [safe(data.get(f"img_{i}")) for i in range(1, 6) if f"img_{i}" in data]
+    biblio_ref = [safe(data.get(f"reference_{i}")) for i in range(1, 11) if f"reference_{i}" in data]
+    tags = [safe(data.get(f"tag_{i}")) for i in range(1, 16) if f"tag_{i}" in data]
 
     html_content = f"""
     <!DOCTYPE html>
@@ -68,13 +68,13 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
         </div>
         <div class="section">
             <h2>Images</h2>
-            {''.join(f'<div class="image"><p>{safe(img)}</p></div>' for img in image_titles) if image_titles else '<p>No images provided</p>'}
+            {''.join(f'<div class="image"><p>{img}</p></div>' for img in image_titles) if image_titles else '<p>No images provided</p>'}
         </div>
         <div class="section">
             <h2>Bibliographic References</h2>
             <div class="biblio">
                 <ul>
-                    {''.join(f'<li>{safe(ref)}</li>' for ref in biblio_ref) if biblio_ref else '<li>No references provided</li>'}
+                    {''.join(f'<li>{ref}</li>' for ref in biblio_ref) if biblio_ref else '<li>No references provided</li>'}
                 </ul>
             </div>
         </div>
@@ -89,16 +89,14 @@ def generate_html_page(title, description="", image_titles=None, biblio_ref=None
         <div class="section">
             <h2>Tags</h2>
             <div class="tags">
-                {', '.join(safe(tag) for tag in tags) if tags else 'No tags provided'}
+                {', '.join(tags) if tags else 'No tags provided'}
             </div>
         </div>
     </body>
     </html>
     """
 
-    # Prompt the user to save the file
-    file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")],
-                                             title="Save HTML Page")
+    file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")], title="Save HTML Page")
     if file_path:
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)
@@ -400,7 +398,11 @@ def open_select_window():
         selected_indices = title_listbox.curselection()
         if selected_indices:
             selected_title = title_listbox.get(selected_indices[0])
-            open_what_to_do(selected_title)  # Open the "What to Do" window
+            data, table = fetch_data_for_title_dynamic(selected_title)
+            if data:
+                generate_html_page(data, selected_title)
+            else:
+                messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
         else:
             messagebox.showwarning("No Selection", "Please select a title.")
 
@@ -561,11 +563,14 @@ def fetch_data_for_title_dynamic(title):
 
         # Search for the title in each table
         for table in tables:
-            cursor.execute(f"SELECT * FROM `{table}` WHERE title = %s", (title,))
+            query = f"SELECT * FROM `{table}` WHERE title = %s"
+            cursor.execute(query, (title,))
             result = cursor.fetchone()
             if result:
-                # Return the data along with the table name
-                return result, table
+                # Retrieve column names for this table to map values
+                cursor.execute(f"DESCRIBE `{table}`")
+                columns = [col[0] for col in cursor.fetchall()]
+                return dict(zip(columns, result)), table  # Return as a dictionary
         return None, None  # No matching title found
     except mysql.connector.Error as err:
         messagebox.showerror("Database Error", f"Error fetching data: {err}")
