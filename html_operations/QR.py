@@ -19,24 +19,90 @@ FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
-    def safe(value, default="No data provided"):
-        return value if value else default
+    def safe(value):
+        return value if value else None
 
     # Extract specific fields if they exist
-    description = safe(data.get("description", ""))
-    location = safe(data.get("location", ""))
-    size = f"H: {safe(data.get('hight'))}, W: {safe(data.get('width'))}, L: {safe(data.get('length'))}"
-    image_titles = [safe(data.get(f"img_{i}")) for i in range(1, 6) if f"img_{i}" in data]
-    biblio_ref = [safe(data.get(f"reference_{i}")) for i in range(1, 11) if f"reference_{i}" in data]
-    tags = [safe(data.get(f"tag_{i}")) for i in range(1, 16) if f"tag_{i}" in data]
+    description = safe(data.get("description"))
+    location = safe(data.get("location"))
+    size_components = [
+        f"H: {safe(data.get('hight'))}",
+        f"W: {safe(data.get('width'))}",
+        f"L: {safe(data.get('length'))}"
+    ]
+    size = ", ".join(filter(None, size_components))
+    image_titles = [safe(data.get(f"img_{i}")) for i in range(1, 6) if f"img_{i}" in data and data.get(f"img_{i}")]
+    biblio_ref = [safe(data.get(f"reference_{i}")) for i in range(1, 11) if f"reference_{i}" in data and data.get(f"reference_{i}")]
+    tags = [safe(data.get(f"tag_{i}")) for i in range(1, 16) if f"tag_{i}" in data and data.get(f"tag_{i}")]
 
+    html_sections = []
+
+    # Add sections conditionally
+    if description:
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Description</h2>
+            <p>{description}</p>
+        </div>
+        """)
+
+    if image_titles:
+        images_html = ''.join(f'<div class="image"><p>{img}</p></div>' for img in image_titles)
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Images</h2>
+            {images_html}
+        </div>
+        """)
+
+    if biblio_ref:
+        biblio_html = ''.join(f'<li>{ref}</li>' for ref in biblio_ref)
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Bibliographic References</h2>
+            <div class="biblio">
+                <ul>
+                    {biblio_html}
+                </ul>
+            </div>
+        </div>
+        """)
+
+    if location:
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Location</h2>
+            <p>{location}</p>
+        </div>
+        """)
+
+    if size:
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Size</h2>
+            <p>{size}</p>
+        </div>
+        """)
+
+    if tags:
+        tags_html = ', '.join(tags)
+        html_sections.append(f"""
+        <div class="section">
+            <h2>Tags</h2>
+            <div class="tags">
+                {tags_html}
+            </div>
+        </div>
+        """)
+
+    # Combine all sections
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{safe(title)}</title>
+        <title>{title}</title>
         <style>
             body {{
                 font-family: Arial, sans-serif;
@@ -61,41 +127,13 @@ def generate_html_page(data, title):
         </style>
     </head>
     <body>
-        <h1>{safe(title)}</h1>
-        <div class="section">
-            <h2>Description</h2>
-            <p>{safe(description)}</p>
-        </div>
-        <div class="section">
-            <h2>Images</h2>
-            {''.join(f'<div class="image"><p>{img}</p></div>' for img in image_titles) if image_titles else '<p>No images provided</p>'}
-        </div>
-        <div class="section">
-            <h2>Bibliographic References</h2>
-            <div class="biblio">
-                <ul>
-                    {''.join(f'<li>{ref}</li>' for ref in biblio_ref) if biblio_ref else '<li>No references provided</li>'}
-                </ul>
-            </div>
-        </div>
-        <div class="section">
-            <h2>Location</h2>
-            <p>{safe(location)}</p>
-        </div>
-        <div class="section">
-            <h2>Size</h2>
-            <p>{safe(size)}</p>
-        </div>
-        <div class="section">
-            <h2>Tags</h2>
-            <div class="tags">
-                {', '.join(tags) if tags else 'No tags provided'}
-            </div>
-        </div>
+        <h1>{title}</h1>
+        {''.join(html_sections)}
     </body>
     </html>
     """
 
+    # Save the HTML
     file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")], title="Save HTML Page")
     if file_path:
         with open(file_path, "w", encoding="utf-8") as file:
@@ -566,13 +604,67 @@ def mysql_login_window():
 
     # Username input
     tk.Label(login_window, text="Username:", font=FONT, bg=BG_COLOR).pack(pady=5)
-    username_entry = tk.Entry(login_window, font=FONT, bg=ENTRY_COLOR)
+
+    username_entry = tk.Entry(
+        login_window,
+        font=FONT,
+        bg=ENTRY_COLOR,
+        fg=TEXT_COLOR,
+        width=20  # Predefined length for username box
+    )
     username_entry.pack(pady=5)
 
-    # Password input
+    # Password input frame
     tk.Label(login_window, text="Password:", font=FONT, bg=BG_COLOR).pack(pady=5)
-    password_entry = tk.Entry(login_window, font=FONT, bg=ENTRY_COLOR, show="*")
-    password_entry.pack(pady=5)
+
+    password_frame = tk.Frame(login_window, bg=BG_COLOR)
+    password_frame.pack(pady=5)
+
+    # Password entry
+    password_entry = tk.Entry(
+        password_frame,
+        font=FONT,
+        bg=ENTRY_COLOR,
+        fg=TEXT_COLOR,
+        show="*",
+        width=17  # Slightly shorter to make space for the eye button
+    )
+    password_entry.pack(side="left")
+
+    # Eye button to toggle password visibility
+    def toggle_password():
+        if password_entry.cget("show") == "*":
+            password_entry.config(show="")
+            eye_button.config(text="🔒")  # Eye-open icon
+        else:
+            password_entry.config(show="*")
+            eye_button.config(text="👁")  # Eye-closed icon
+
+    eye_button = tk.Button(
+        password_frame,
+        text="👁",  # Eye-closed icon
+        font=("Arial", 12),
+        bg=ENTRY_COLOR,
+        fg=TEXT_COLOR,
+        relief="flat",
+        command=toggle_password,
+        width=2,  # Predefined button width
+        height=1  # Predefined button height
+    )
+    eye_button.pack(side="right", padx=5)
+
+    # Caps Lock Indicator
+    caps_lock_label = tk.Label(login_window, text="", font=FONT, bg=BG_COLOR, fg="red")
+    caps_lock_label.pack(pady=5)
+
+    def update_capslock_indicator(event):
+        if event.state & 0x0002:  # Check if Caps Lock is active
+            caps_lock_label.config(text="CAPS LOCK ON")
+        else:
+            caps_lock_label.config(text="")
+
+    # Bind key events to update the Caps Lock indicator
+    login_window.bind("<KeyPress>", update_capslock_indicator)
 
     def submit_credentials():
         """Retrieve credentials and close the login window."""
