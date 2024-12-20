@@ -244,7 +244,7 @@ def open_options_window(title, html_path):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: Database.open_window_4(title)
+        command=lambda: Database.send_to_DB_window(title)
     ).pack(pady=10)
 
 def open_qr_code_window(title, html_path):
@@ -474,6 +474,30 @@ def open_what_to_do(data, title):
 
 def open_modify_delete_window(title):
     """Open a window for modifying or deleting the selected entry."""
+    data, table = fetch_data_for_title_dynamic(title)
+    description = data.get("description") if data else ""  # Default to an empty string if no description
+    references = [
+        data.get(f"reference_{i}") for i in range(1, 11)
+        if data and data.get(f"reference_{i}")  # Only include non-empty references
+    ]
+    location = data.get("location") if data else ""
+
+
+    # Extract size components
+    length = data.get("length", "")  # Use the database column names
+    width = data.get("width", "")
+    height = data.get("hight", "")  # Assuming "hight" is the column name
+
+    # Format size as a dictionary
+    size = {"length": length, "width": width, "height": height}
+
+    # Extract tags
+    tags = [
+        data.get(f"tag_{i}") for i in range(1, 16)
+        if data and data.get(f"tag_{i}")  # Only include non-empty tags
+    ]
+
+    # Create Modify/Delete window
     modify_delete_window = Toplevel()
     modify_delete_window.title("Modify/Delete Entry")
     modify_delete_window.configure(bg=BG_COLOR)
@@ -498,7 +522,10 @@ def open_modify_delete_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: Database.open_window_4(title)  # Call modify logic
+        command=lambda: [
+            Database.send_to_DB_window(title, description, references, location, size, tags),
+            modify_delete_window.destroy(),
+        ]  # Pass title, description, and references
     ).pack(pady=10)
 
     # Delete Button
@@ -520,8 +547,10 @@ def get_titles():
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user=mysql_username,  # Use global variable from login window
-            password=mysql_password,  # Use global variable from login window
+            user="root",
+            password="YellowMYSQL45*",
+            # user=mysql_username,  # Use global variable from login window
+            # password=mysql_password,  # Use global variable from login window
             database="museum"
         )
         cursor = connection.cursor()
@@ -551,12 +580,12 @@ def get_titles():
 
 
 def fetch_data_for_title_dynamic(title):
-    """Fetch all details for a given title from any table dynamically."""
+    """Fetch detailed information (title, description, images, references, location, size, tags) for a given title from any table dynamically."""
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user=mysql_username,  # Use global variable from login window
-            password=mysql_password,  # Use global variable from login window
+            user="root",  # Use global variable from login window
+            password="YellowMYSQL45*",  # Use global variable from login window
             database="museum"
         )
         cursor = connection.cursor()
@@ -571,14 +600,31 @@ def fetch_data_for_title_dynamic(title):
 
         # Search for the title in each table
         for table in tables:
-            query = f"SELECT * FROM `{table}` WHERE title = %s"
+            query = f"""
+            SELECT title, description, 
+                   img_1, img_2, img_3, img_4, img_5, 
+                   reference_1, reference_2, reference_3, reference_4, reference_6, reference_7, reference_8, reference_9, reference_10,
+                   location, 
+                   hight, width, length, 
+                   tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
+            FROM `{table}`
+            WHERE title = %s
+            """
             cursor.execute(query, (title,))
             result = cursor.fetchone()
             if result:
-                # Retrieve column names for this table to map values
-                cursor.execute(f"DESCRIBE `{table}`")
-                columns = [col[0] for col in cursor.fetchall()]
-                return dict(zip(columns, result)), table  # Return as a dictionary
+                # Build a detailed dictionary of the result
+                columns = [
+                    "title", "description",
+                    "img_1", "img_2", "img_3", "img_4", "img_5",
+                    "reference_1", "reference_2", "reference_3", "reference_4", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
+                    "location",
+                    "hight", "width", "length",
+                    "tag_1", "tag_2", "tag_3", "tag_4", "tag_5", "tag_6", "tag_7", "tag_8", "tag_9", "tag_10",
+                    "tag_11", "tag_12", "tag_13", "tag_14", "tag_15"
+                ]
+                detailed_info = dict(zip(columns, result))
+                return detailed_info, table  # Return detailed info and table name
         return None, None  # No matching title found
     except mysql.connector.Error as err:
         messagebox.showerror("Database Error", f"Error fetching data: {err}")
@@ -635,14 +681,14 @@ def mysql_login_window():
     def toggle_password():
         if password_entry.cget("show") == "*":
             password_entry.config(show="")
-            eye_button.config(text="🔒")  # Eye-open icon
+            eye_button.config(text="🔒")
         else:
             password_entry.config(show="*")
-            eye_button.config(text="👁")  # Eye-closed icon
+            eye_button.config(text="👁")
 
     eye_button = tk.Button(
         password_frame,
-        text="👁",  # Eye-closed icon
+        text="👁",
         font=("Arial", 12),
         bg=ENTRY_COLOR,
         fg=TEXT_COLOR,
@@ -692,6 +738,6 @@ def mysql_login_window():
 if __name__ == "__main__":
     mysql_username = None
     mysql_password = None
-    mysql_login_window()  # Prompt for MySQL credentials
+    #mysql_login_window()  # Prompt for MySQL credentials
     open_select_window()  # Open the main window after login
 

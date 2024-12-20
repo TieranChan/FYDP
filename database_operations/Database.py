@@ -12,7 +12,7 @@ FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
 FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 FONT_TEXT = ("Arial Rounded MT Bold", 10)
 
-def open_window_6(title, description, image_titles, biblio_ref, location, size, tags, window_4):
+def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4):
     """Creates Window 6: Display title, description, image titles, and send button."""
     # Create Window 6
     window_6 = tk.Tk()
@@ -108,6 +108,20 @@ def open_window_6(title, description, image_titles, biblio_ref, location, size, 
     else:
         create_centered_label("No tags were provided", font=FONT_BOLD, fg="red")
 
+    def parse_size_to_dict(size_str):
+        """Convert a size string into a dictionary."""
+        size_dict = {"length": "", "width": "", "height": ""}
+        if isinstance(size_str, str):
+            size_parts = size_str.split()
+            for part in size_parts:
+                if part.startswith("Length:"):
+                    size_dict["length"] = part.split(":")[1].strip()
+                elif part.startswith("Width:"):
+                    size_dict["width"] = part.split(":")[1].strip()
+                elif part.startswith("Height:"):
+                    size_dict["height"] = part.split(":")[1].strip()
+        return size_dict
+
     # Back button to return to Window 4 with the updated image count
     back_button = tk.Button(
         second_frame,
@@ -116,7 +130,15 @@ def open_window_6(title, description, image_titles, biblio_ref, location, size, 
         fg=BUTTON_TEXT,
         bg=BUTTON_COLOR,
         command=lambda: (
-            window_6.destroy(), open_window_4(title, description, image_titles, biblio_ref, location, size, tags))
+            window_6.destroy(),
+            send_to_DB_window(
+                title=title,
+                description=description,
+                references=biblio_ref,
+                location=location,
+                size=parse_size_to_dict(size),  # Convert size to dictionary
+                tags=tags,
+                image_titles=image_titles))
     )
 
     back_button.pack(pady=10)
@@ -128,23 +150,47 @@ def open_window_6(title, description, image_titles, biblio_ref, location, size, 
         font=FONT,
         fg=BUTTON_TEXT,
         bg=BUTTON_COLOR,
-        command=lambda: QR.open_save_HTML(title)  # Opens the new window and closes current
+        command=lambda: (
+            window_6.destroy(),
+            send_to_DB_window(title, description, references=biblio_ref, location=location, size=size, tags=tags, image_titles=image_titles)
+        )
     )
     send_button.pack(pady=20)
 
     window_6.mainloop()
 
 
-def open_window_4(title="", description="", image_titles=None, biblio_ref="", location="", size="", tags=""):
-    """Creates Window 4: Display title, description, and image upload functionality."""
+def send_to_DB_window(title="", description="", references=None, location="", size="", tags="", image_titles=None):
+    """Creates Window 4: Display title, description, and reference input functionality."""
 
     # Create Window 4
-    window_4 = tk.Tk()
+    window_4 = tk.Toplevel()
     window_4.title("4 Database - Insert Images")
     window_4.configure(bg=BG_COLOR)
 
     if image_titles is None:
         image_titles = []
+    if tags is None:
+        tags = []
+
+    # Handle size as either string or dictionary
+    if isinstance(size, str):
+        # Attempt to parse the size string into a dictionary
+        size_parts = size.split()
+        size_dict = {"length": "", "width": "", "height": ""}
+        for part in size_parts:
+            if part.startswith("Length:"):
+                size_dict["length"] = part.split(":")[1].strip()
+            elif part.startswith("Width:"):
+                size_dict["width"] = part.split(":")[1].strip()
+            elif part.startswith("Height:"):
+                size_dict["height"] = part.split(":")[1].strip()
+        size = size_dict
+
+    # Preload size fields
+    length_value = size.get("length", "")
+    width_value = size.get("width", "")
+    height_value = size.get("height", "")
 
     def go_to_window_6():
         """Transition to Window 6 with the collected title, description, and image titles."""
@@ -160,7 +206,7 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
         width = width_entry.get().strip()
         height = height_entry.get().strip()
 
-        # Collect keywords/tags
+        # Collect tags
         tags = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
         # Validation checks
@@ -220,7 +266,7 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
         # If all inputs are valid, proceed to open Window 6 and destroy Window 4
         if is_valid:
             window_4.destroy()
-            open_window_6(title, description, image_titles, biblio_ref, location, size, tags, window_4)
+            final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4)
 
     def upload_image():
         """Handle image upload."""
@@ -408,17 +454,20 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=BG_COLOR)
     space_label.pack(anchor="center")
 
-    references = tk.Label(second_frame, text="References:", font=FONT_BOLD, bg=BG_COLOR)
-    references.pack(anchor="center")
+    refs = tk.Label(second_frame, text="References:", font=FONT_BOLD, bg=BG_COLOR)
+    refs.pack(anchor="center")
 
-    # Creating the bibliographic reference entry fields
-    ref_entries = []
     ref_count_labels = []  # List to store reference count labels
+
+
+    # Populate reference entry fields
+    ref_entries = []
     for i in range(10):  # Adjust the number based on your needs
         ref_frame = tk.Frame(second_frame, bg=BG_COLOR)
         ref_frame.pack(anchor="center")
 
         ref_entry = tk.Entry(ref_frame, font=FONT_TEXT, width=60, bg=ENTRY_COLOR)
+        ref_entry.insert(tk.END, references[i] if i < len(references) else "")  # Insert reference or leave blank
         ref_entry.pack(side="left")
         ref_entries.append(ref_entry)
 
@@ -459,12 +508,15 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
     size_frame.pack(anchor="center", pady=10)
 
     length_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
+    length_entry.insert(tk.END, length_value)
     length_entry.pack(side="left", padx=5)
 
     width_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
+    width_entry.insert(tk.END, width_value)
     width_entry.pack(side="left", padx=5)
 
     height_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
+    height_entry.insert(tk.END, height_value)
     height_entry.pack(side="left", padx=5)
 
     size_error = tk.Label(second_frame, text="", font=FONT_TEXT, bg=BG_COLOR)
@@ -479,25 +531,31 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
     keywords_count_labels = []
 
     # Create the keyword entries and character count labels
-    for row in range(5):  # Loop through 5 rows
-        keyword_row_frame = tk.Frame(second_frame, bg=BG_COLOR)
-        keyword_row_frame.pack(anchor="center", pady=2)
+    for index, tag in enumerate(tags + [""] * (15 - len(tags))):  # Ensure exactly 15 tags
+        # Calculate row and column for placement
+        row = index // 3
+        col = index % 3
 
-        for col in range(3):  # Loop through 3 columns
-            # Create keyword entry widget
-            keyword_entry = tk.Entry(keyword_row_frame, font=FONT_TEXT, width=20, bg=ENTRY_COLOR)
-            keyword_entry.pack(side="left", padx=5)
+        # Create a new row frame only for the first column in a set
+        if col == 0:
+            keyword_row_frame = tk.Frame(second_frame, bg=BG_COLOR)
+            keyword_row_frame.pack(anchor="center", pady=2)
 
-            # Create the corresponding character count label
-            keyword_count_label = tk.Label(keyword_row_frame, text="0/20", font=FONT_TEXT, bg=BG_COLOR)
-            keyword_count_label.pack(side="left")
+        # Create keyword entry widget
+        keyword_entry = tk.Entry(keyword_row_frame, font=FONT_TEXT, width=20, bg=ENTRY_COLOR)
+        keyword_entry.insert(tk.END, tag)
+        keyword_entry.grid(row=row, column=col * 2, padx=5, pady=5)  # Adjust column index for spacing
 
-            # Append the entries and labels to their respective lists
-            keyword_entries.append(keyword_entry)
-            keywords_count_labels.append(keyword_count_label)
+        # Create the corresponding character count label next to the entry
+        keyword_count_label = tk.Label(keyword_row_frame, text="0/20", font=FONT_TEXT, bg=BG_COLOR)
+        keyword_count_label.grid(row=row, column=(col * 2) + 1, padx=5)  # Place to the right of the entry
 
-            # Bind the update function to each keyword entry
-            keyword_entry.bind("<KeyRelease>", update_character_count)
+        # Append the entries and labels to their respective lists
+        keyword_entries.append(keyword_entry)
+        keywords_count_labels.append(keyword_count_label)
+
+        # Bind the update function to each keyword entry
+        keyword_entry.bind("<KeyRelease>", update_character_count)
 
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=BG_COLOR)
     space_label.pack(anchor="center")
@@ -526,7 +584,10 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
 
     window_4.mainloop()
 
+def send_to_database():
+    print("Sent to database")
+
 
 if __name__ == "__main__":
     # Start by opening window 4
-    open_window_4()
+    send_to_DB_window()
