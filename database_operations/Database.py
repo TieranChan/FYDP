@@ -17,7 +17,6 @@ def open_window_6(title, description, image_titles, biblio_ref, location, size, 
     # Create Window 6
     window_6 = tk.Tk()
     window_6.title("Window 6 - Display Collected Data")
-    window_6.geometry("800x800")
     window_6.configure(bg=BG_COLOR)
 
     main_frame = Frame(window_6, bg=BG_COLOR)
@@ -142,7 +141,6 @@ def open_window_4(title="", description="", image_titles=None, biblio_ref="", lo
     # Create Window 4
     window_4 = tk.Tk()
     window_4.title("4 Database - Insert Images")
-    window_4.geometry("650x650")
     window_4.configure(bg=BG_COLOR)
 
     if image_titles is None:

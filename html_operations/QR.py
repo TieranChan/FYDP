@@ -103,7 +103,6 @@ def generate_html_page(data, title):
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
 
-
 def generate_qr(data):
     """Generate a QR code and return it as a PhotoImage."""
     qr = segno.make(data)  # Create QR code
@@ -123,12 +122,11 @@ def save_qr_to_file(data):
         qr.save(file_path, kind='png', scale=10)
         print(f"QR Code saved to {file_path}")
 
-def open_save_HTML(title):
+def open_save_HTML(data, title):
     """Open a window to prompt the user to save the HTML file."""
     third_window = Toplevel()
     third_window.title("Save HTML File")
     third_window.configure(bg=BG_COLOR)
-    third_window.geometry("300x200")
 
     # Display the title
     tk.Label(
@@ -150,15 +148,15 @@ def open_save_HTML(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: [generate_html_page(title), third_window.destroy()]  # Generate HTML and close this window
+        command=lambda: [generate_html_page(data, title), third_window.destroy()]  # Pass both arguments
     ).pack(pady=20)
+
 
 def open_options_window(title, html_path):
     """Open a window with options after saving the HTML file."""
     options_window = Toplevel()
     options_window.title("Options - Next Steps")
     options_window.configure(bg=BG_COLOR)
-    options_window.geometry("300x300")
 
     # Display the title
     tk.Label(
@@ -216,7 +214,6 @@ def open_qr_code_window(title, html_path):
     qr_window = Toplevel()
     qr_window.title("QR Code Viewer")
     qr_window.configure(bg=BG_COLOR)
-    qr_window.geometry("400x550")
 
     # Display the title
     tk.Label(
@@ -276,7 +273,6 @@ def confirm_delete(title, parent_window):
     confirm_window = Toplevel()
     confirm_window.title("Confirm Delete")
     confirm_window.configure(bg=BG_COLOR)
-    confirm_window.geometry("300x150")
 
     # Confirmation message
     tk.Label(
@@ -324,7 +320,6 @@ def delete_entry(title):
 def open_select_window():
     root = tk.Tk()
     root.title("Select a Title")
-    root.geometry("600x300")
     root.configure(bg="#E0F0FD")
 
     tk.Label(
@@ -339,54 +334,31 @@ def open_select_window():
     frame = tk.Frame(root)
     frame.pack(pady=10)
 
-    scrollbar = Scrollbar(frame, orient="vertical")
-    scrollbar.pack(side="right", fill="y")
+    # Vertical scrollbar
+    v_scrollbar = tk.Scrollbar(frame, orient="vertical")
+    v_scrollbar.pack(side="right", fill="y")
 
-    title_listbox = Listbox(
+    # Horizontal scrollbar
+    h_scrollbar = tk.Scrollbar(frame, orient="horizontal")
+    h_scrollbar.pack(side="bottom", fill="x")
+
+    # Listbox with enhanced configuration
+    title_listbox = tk.Listbox(
         frame,
-        width=50,
-        height=10,
-        yscrollcommand=scrollbar.set,
-        font=("Arial", 12)
+        font=FONT,
+        bg=ENTRY_COLOR,          # Match the input field background color
+        fg=TEXT_COLOR,           # Deep blue text color
+        selectbackground=BUTTON_COLOR,  # Button blue for selected item background
+        selectforeground="white",       # White text for selected item
+        height=4,               # Display 10 items at a time for more visibility
+        yscrollcommand=v_scrollbar.set,
+        xscrollcommand=h_scrollbar.set
     )
     title_listbox.pack(side="left", fill="y")
-    scrollbar.config(command=title_listbox.yview)
 
-    # Populate the Listbox with titles
-    titles = get_titles()
-    for title in titles:
-        title_listbox.insert("end", title)
-
-def open_select_window():
-    root = tk.Tk()
-    root.title("Select a Title")
-    root.geometry("600x300")
-    root.configure(bg="#E0F0FD")
-
-    tk.Label(
-        root,
-        text="Select a title to view information:",
-        font=("Arial Rounded MT Bold", 16),
-        bg="#E0F0FD",
-        fg="#0D47A1"
-    ).pack(pady=10)
-
-    # Frame for Listbox and Scrollbar
-    frame = tk.Frame(root)
-    frame.pack(pady=10)
-
-    scrollbar = Scrollbar(frame, orient="vertical")
-    scrollbar.pack(side="right", fill="y")
-
-    title_listbox = Listbox(
-        frame,
-        width=50,
-        height=10,
-        yscrollcommand=scrollbar.set,
-        font=("Arial", 12)
-    )
-    title_listbox.pack(side="left", fill="y")
-    scrollbar.config(command=title_listbox.yview)
+    # Configure scrollbars
+    v_scrollbar.config(command=title_listbox.yview)
+    h_scrollbar.config(command=title_listbox.xview)
 
     # Populate the Listbox with titles
     titles = get_titles()
@@ -400,7 +372,7 @@ def open_select_window():
             selected_title = title_listbox.get(selected_indices[0])
             data, table = fetch_data_for_title_dynamic(selected_title)
             if data:
-                generate_html_page(data, selected_title)
+                open_what_to_do(data, selected_title)  # Pass data and title
             else:
                 messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
         else:
@@ -419,12 +391,11 @@ def open_select_window():
     root.mainloop()
 
 
-def open_what_to_do(title):
+def open_what_to_do(data, title):
     """Open a window to display options for the selected title."""
     what_to_do_window = Toplevel()
     what_to_do_window.title("What to Do Next")
     what_to_do_window.configure(bg=BG_COLOR)
-    what_to_do_window.geometry("300x250")
 
     # Display the title
     tk.Label(
@@ -460,7 +431,7 @@ def open_what_to_do(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_save_HTML(title)
+        command=lambda: open_save_HTML(data, title)  # Pass both arguments
     ).pack(pady=10)
 
 def open_modify_delete_window(title):
@@ -468,7 +439,6 @@ def open_modify_delete_window(title):
     modify_delete_window = Toplevel()
     modify_delete_window.title("Modify/Delete Entry")
     modify_delete_window.configure(bg=BG_COLOR)
-    modify_delete_window.geometry("300x200")
 
     # Display the title
     tk.Label(
@@ -507,7 +477,6 @@ def open_modify_delete_window(title):
         command=lambda: confirm_delete(title, modify_delete_window)
     ).pack(pady=10)
 
-
 def get_titles():
     """Fetch all titles dynamically from all tables with a 'title' column."""
     try:
@@ -541,6 +510,7 @@ def get_titles():
         if connection.is_connected():
             cursor.close()
             connection.close()
+
 
 def fetch_data_for_title_dynamic(title):
     """Fetch all details for a given title from any table dynamically."""
@@ -584,7 +554,6 @@ def mysql_login_window():
     """Create a login window for MySQL credentials."""
     login_window = tk.Tk()
     login_window.title("MySQL Login")
-    login_window.geometry("300x200")
     login_window.configure(bg=BG_COLOR)
 
     tk.Label(
