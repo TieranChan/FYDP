@@ -12,6 +12,23 @@ FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
 FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 FONT_TEXT = ("Arial Rounded MT Bold", 10)
 
+
+def parse_size_to_dict(size_str):
+    """Convert a size string or dictionary into a dictionary."""
+    if isinstance(size_str, dict):
+        return size_str  # Already a dictionary, return as is
+    size_dict = {"length": "", "width": "", "height": ""}
+    if isinstance(size_str, str):
+        size_parts = size_str.split()
+        for part in size_parts:
+            if part.startswith("Length:"):
+                size_dict["length"] = part.split(":")[1].strip()
+            elif part.startswith("Width:"):
+                size_dict["width"] = part.split(":")[1].strip()
+            elif part.startswith("Height:"):
+                size_dict["height"] = part.split(":")[1].strip()
+    return size_dict
+
 def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4):
     """Creates Window 6: Display title, description, image titles, and send button."""
     # Create Window 6
@@ -91,9 +108,9 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         create_centered_label("No location was provided", font=FONT_BOLD, fg="red")
 
     # Display size
-    if size:  # Check if size has content indicative of dimensions
-        create_centered_label("Size:", font=FONT_BOLD)
-        create_centered_label(size, font=FONT)
+    if size:
+        size_str = f"Length: {size.get('length', '')} Width: {size.get('width', '')} Height: {size.get('height', '')}"
+        create_centered_label(size_str.strip(), font=FONT)
     else:
         create_centered_label("No sizes were given", font=FONT_BOLD, fg="red")
 
@@ -108,21 +125,6 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     else:
         create_centered_label("No tags were provided", font=FONT_BOLD, fg="red")
 
-    def parse_size_to_dict(size_str):
-        """Convert a size string into a dictionary."""
-        size_dict = {"length": "", "width": "", "height": ""}
-        if isinstance(size_str, str):
-            size_parts = size_str.split()
-            for part in size_parts:
-                if part.startswith("Length:"):
-                    size_dict["length"] = part.split(":")[1].strip()
-                elif part.startswith("Width:"):
-                    size_dict["width"] = part.split(":")[1].strip()
-                elif part.startswith("Height:"):
-                    size_dict["height"] = part.split(":")[1].strip()
-        return size_dict
-
-    # Back button to return to Window 4 with the updated image count
     back_button = tk.Button(
         second_frame,
         text="Back",
@@ -136,11 +138,12 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
                 description=description,
                 references=biblio_ref,
                 location=location,
-                size=parse_size_to_dict(size),  # Convert size to dictionary
+                size=parse_size_to_dict(size),  # Ensure size remains a dictionary
                 tags=tags,
-                image_titles=image_titles))
+                image_titles=image_titles
+            )
+        )
     )
-
     back_button.pack(pady=10)
 
     # Send to database button
@@ -173,19 +176,8 @@ def send_to_DB_window(title="", description="", references=None, location="", si
     if tags is None:
         tags = []
 
-    # Handle size as either string or dictionary
-    if isinstance(size, str):
-        # Attempt to parse the size string into a dictionary
-        size_parts = size.split()
-        size_dict = {"length": "", "width": "", "height": ""}
-        for part in size_parts:
-            if part.startswith("Length:"):
-                size_dict["length"] = part.split(":")[1].strip()
-            elif part.startswith("Width:"):
-                size_dict["width"] = part.split(":")[1].strip()
-            elif part.startswith("Height:"):
-                size_dict["height"] = part.split(":")[1].strip()
-        size = size_dict
+    # Ensure size is in dictionary format
+    size = parse_size_to_dict(size)
 
     # Preload size fields
     length_value = size.get("length", "")
@@ -201,10 +193,12 @@ def send_to_DB_window(title="", description="", references=None, location="", si
                       entry.get().strip()]  # Collect non-empty references
         location = location_entry.get().strip()  # Get location info
 
-        # Collect size info (concatenated dimensions)
-        length = length_entry.get().strip()
-        width = width_entry.get().strip()
-        height = height_entry.get().strip()
+        # Collect size info as a dictionary
+        size = {
+            "length": length_entry.get().strip(),
+            "width": width_entry.get().strip(),
+            "height": height_entry.get().strip(),
+        }
 
         # Collect tags
         tags = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
@@ -225,43 +219,6 @@ def send_to_DB_window(title="", description="", references=None, location="", si
             is_valid = False
         else:
             description_error.config(text="")
-
-        # Initialize size as an empty string
-        size = ""
-
-        # Check for the presence of any dimension and validate them
-        if length or width or height:
-            try:
-                # Convert dimensions to float, if provided
-                if length:
-                    length = float(length)
-                if width:
-                    width = float(width)
-                if height:
-                    height = float(height)
-
-                # Ensure the dimensions don't exceed the maximum allowed size
-                if (length and length > 99999.99) or (width and width > 99999.99) or (height and height > 99999.99):
-                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
-                    is_valid = False
-                else:
-                    size_error.config(text="")  # Clear error if sizes are valid
-
-                # Build the size string based on the dimensions provided
-                if length:
-                    size += f"Length: {length} "
-                if width:
-                    size += f"Width: {width} "
-                if height:
-                    size += f"Height: {height} "
-
-                size = size.strip()  # Remove any trailing spaces
-
-            except ValueError:
-                size_error.config(text="Please enter valid numeric values for size", fg="red")
-                is_valid = False
-        else:
-            size = ""  # If no dimensions are provided, leave size empty
 
         # If all inputs are valid, proceed to open Window 6 and destroy Window 4
         if is_valid:
@@ -500,24 +457,26 @@ def send_to_DB_window(title="", description="", references=None, location="", si
     space_label.pack(anchor="center")
 
     # Size of the museum piece (L x W x H) – Ensure it's centered
-    size_label = tk.Label(second_frame, text="Size of Museum Piece (L x W x H):", font=FONT_BOLD,
-                          bg=BG_COLOR)
+    size_label = tk.Label(second_frame, text="Size of Museum Piece (L x W x H):", font=FONT_BOLD, bg=BG_COLOR)
     size_label.pack(anchor="center")
 
     size_frame = tk.Frame(second_frame, bg=BG_COLOR)
     size_frame.pack(anchor="center", pady=10)
 
+    # Create size entry fields
     length_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
-    length_entry.insert(tk.END, length_value)
     length_entry.pack(side="left", padx=5)
 
     width_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
-    width_entry.insert(tk.END, width_value)
     width_entry.pack(side="left", padx=5)
 
     height_entry = tk.Entry(size_frame, font=FONT_TEXT, bg=ENTRY_COLOR, width=10)
-    height_entry.insert(tk.END, height_value)
     height_entry.pack(side="left", padx=5)
+
+    # Populate the size fields
+    length_entry.insert(0, length_value)
+    width_entry.insert(0, width_value)
+    height_entry.insert(0, height_value)
 
     size_error = tk.Label(second_frame, text="", font=FONT_TEXT, bg=BG_COLOR)
     size_error.pack(anchor="center")
