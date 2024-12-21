@@ -35,6 +35,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     window_6 = tk.Tk()
     window_6.title("Window 6 - Display Collected Data")
     window_6.configure(bg=BG_COLOR)
+    window_6.geometry("950x600")
 
     main_frame = Frame(window_6, bg=BG_COLOR)
     main_frame.pack(fill=BOTH, expand=1)
@@ -162,7 +163,6 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
 
     window_6.mainloop()
 
-
 def send_to_DB_window(title="", description="", references=None, location="", size="", tags="", image_titles=None):
     """Creates Window 4: Display title, description, and reference input functionality."""
 
@@ -170,6 +170,7 @@ def send_to_DB_window(title="", description="", references=None, location="", si
     window_4 = tk.Toplevel()
     window_4.title("4 Database - Insert Images")
     window_4.configure(bg=BG_COLOR)
+    window_4.geometry("680x600")
 
     if image_titles is None:
         image_titles = []
@@ -548,5 +549,4 @@ def send_to_database():
 
 
 if __name__ == "__main__":
-    # Start by opening window 4
     send_to_DB_window()

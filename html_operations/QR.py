@@ -233,19 +233,6 @@ def open_options_window(title, html_path):
         command=lambda: open_qr_code_window(title, html_path)
     ).pack(pady=10)
 
-    # Additional placeholder options
-    tk.Button(
-        options_window,
-        text="Modify Entry",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
-        fg="white",
-        activebackground=TEXT_COLOR,
-        activeforeground="white",
-        padx=10,
-        pady=5,
-        command=lambda: Database.send_to_DB_window(title)
-    ).pack(pady=10)
 
 def open_qr_code_window(title, html_path):
     """Open a window to display the QR code with Save and Print options."""
@@ -357,76 +344,172 @@ def delete_entry(title):
 
 def open_select_window():
     root = tk.Tk()
-    root.title("Select a Title")
-    root.configure(bg="#E0F0FD")
+    root.title("Select Folder and Title")
+    root.configure(bg=BG_COLOR)
 
     tk.Label(
         root,
-        text="Select a title to view information:",
-        font=("Arial Rounded MT Bold", 16),
-        bg="#E0F0FD",
-        fg="#0D47A1"
+        text="Select a folder to view titles:",
+        font=FONT_BOLD,
+        bg=BG_COLOR,
+        fg=TEXT_COLOR
     ).pack(pady=10)
 
-    # Frame for Listbox and Scrollbar
-    frame = tk.Frame(root)
-    frame.pack(pady=10)
+    # Frame for folder selection
+    folder_frame = tk.Frame(root, bg=BG_COLOR)
+    folder_frame.pack(pady=10)
 
-    # Vertical scrollbar
-    v_scrollbar = tk.Scrollbar(frame, orient="vertical")
-    v_scrollbar.pack(side="right", fill="y")
-
-    # Horizontal scrollbar
-    h_scrollbar = tk.Scrollbar(frame, orient="horizontal")
-    h_scrollbar.pack(side="bottom", fill="x")
-
-    # Listbox with enhanced configuration
-    title_listbox = tk.Listbox(
-        frame,
+    folder_listbox = tk.Listbox(
+        folder_frame,
         font=FONT,
-        bg=ENTRY_COLOR,          # Match the input field background color
-        fg=TEXT_COLOR,           # Deep blue text color
-        selectbackground=BUTTON_COLOR,  # Button blue for selected item background
-        selectforeground="white",       # White text for selected item
-        height=4,               # Display 10 items at a time for more visibility
-        yscrollcommand=v_scrollbar.set,
-        xscrollcommand=h_scrollbar.set
+        bg=ENTRY_COLOR,
+        fg=TEXT_COLOR,
+        selectbackground=BUTTON_COLOR,
+        selectforeground="white",
+        height=10,
+        width=30
     )
-    title_listbox.pack(side="left", fill="y")
+    folder_listbox.pack(side="left", fill="y", padx=5)
 
-    # Configure scrollbars
-    v_scrollbar.config(command=title_listbox.yview)
-    h_scrollbar.config(command=title_listbox.xview)
+    folder_scrollbar = tk.Scrollbar(folder_frame, orient="vertical", command=folder_listbox.yview)
+    folder_scrollbar.pack(side="right", fill="y")
+    folder_listbox.config(yscrollcommand=folder_scrollbar.set)
 
-    # Populate the Listbox with titles
-    titles = get_titles()
-    for title in titles:
-        title_listbox.insert("end", title)
+    tk.Label(
+        root,
+        text="Select a title within the folder:",
+        font=FONT_BOLD,
+        bg=BG_COLOR,
+        fg=TEXT_COLOR
+    ).pack(pady=10)
 
-    # Define the on_search function inside open_select_window
+    # Frame for title selection
+    title_frame = tk.Frame(root, bg=BG_COLOR)
+    title_frame.pack(pady=10)
+
+    title_listbox = tk.Listbox(
+        title_frame,
+        font=FONT,
+        bg=ENTRY_COLOR,
+        fg=TEXT_COLOR,
+        selectbackground=BUTTON_COLOR,
+        selectforeground="white",
+        height=10,
+        width=30
+    )
+    title_listbox.pack(side="left", fill="y", padx=5)
+
+    title_scrollbar = tk.Scrollbar(title_frame, orient="vertical", command=title_listbox.yview)
+    title_scrollbar.pack(side="right", fill="y")
+    title_listbox.config(yscrollcommand=title_scrollbar.set)
+
+    # Populate folder listbox with folder names
+    folders = get_folders()  # Fetch all folder (table) names dynamically
+    for folder in folders:
+        folder_listbox.insert("end", folder)
+
+    def update_titles(event):
+        """Update the titles listbox based on the selected folder."""
+        try:
+            # Check if a folder is selected
+            if not folder_listbox.curselection():
+                return  # Exit the function if no folder is selected
+
+            # Get the selected folder
+            selected_folder = folder_listbox.get(folder_listbox.curselection())
+
+            # Fetch titles from the selected folder
+            titles = get_titles_in_folder(selected_folder)
+
+            # Clear the title listbox
+            title_listbox.delete(0, "end")
+
+            # Populate the title listbox with titles from the selected folder
+            for title in titles:
+                title_listbox.insert("end", title)
+
+        except Exception as e:
+            print(f"Error updating titles: {e}")  # Debugging purpose, can be removed in production
+
+    folder_listbox.bind("<<ListboxSelect>>", update_titles)
+
     def on_search():
-        selected_indices = title_listbox.curselection()
-        if selected_indices:
-            selected_title = title_listbox.get(selected_indices[0])
+        """Fetch data for the selected title and open the next window."""
+        try:
+            # Validate title selection
+            if not title_listbox.curselection():
+                messagebox.showwarning("Selection Error", "Please select a title.")
+                return
+
+            # Get the selected title
+            selected_title = title_listbox.get(title_listbox.curselection())
+
+            # Fetch data for the selected title
             data, table = fetch_data_for_title_dynamic(selected_title)
+
             if data:
-                open_what_to_do(data, selected_title)  # Pass data and title
+                open_what_to_do(data, selected_title)  # Pass the data and title to the next window
             else:
                 messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
-        else:
-            messagebox.showwarning("No Selection", "Please select a title.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An unexpected error occurred: {e}")
 
     # Search button
     tk.Button(
         root,
         text="Search",
         command=on_search,
-        font=("Arial Rounded MT Bold", 14),
-        bg="#96CCF9",
+        font=FONT_BOLD,
+        bg=BUTTON_COLOR,
         fg="white"
-    ).pack(pady=10)
+    ).pack(pady=20)
 
     root.mainloop()
+
+def get_folders():
+    """Fetch all folder (table) names dynamically."""
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="YellowMYSQL45*",
+            database="museum"
+        )
+        cursor = connection.cursor()
+        cursor.execute("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE TABLE_SCHEMA = 'museum'
+        """)
+        return [row[0] for row in cursor.fetchall()]
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching folders: {err}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def get_titles_in_folder(folder):
+    """Fetch all titles from a specific folder (table)."""
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="YellowMYSQL45*",
+            database="museum"
+        )
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT title FROM `{folder}`")
+        return [row[0] for row in cursor.fetchall()]
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching titles from {folder}: {err}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
 
 
 def open_what_to_do(data, title):
