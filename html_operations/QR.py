@@ -7,15 +7,8 @@ import webbrowser
 from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
+import config
 
-
-# Global color scheme
-BG_COLOR = "#E0F0FD"  # Light blue background
-ENTRY_COLOR = "#BBDEFB"  # Lighter blue for input fields
-BUTTON_COLOR = "#96CCF9"  # Button blue
-TEXT_COLOR = "#0D47A1"  # Deep blue for text
-FONT = ("Arial Rounded MT Bold", 14)  # Rounded font for all text
-FONT_BOLD = ("Arial Rounded MT Bold", 16, "bold")  # Rounded font for headings
 
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
@@ -141,6 +134,7 @@ def generate_html_page(data, title):
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
 
+
 def generate_qr(data):
     """Generate a QR code and return it as a PhotoImage."""
     qr = segno.make(data)  # Create QR code
@@ -151,6 +145,7 @@ def generate_qr(data):
     image = image.resize((200, 200), Image.Resampling.LANCZOS)  # Resize for display
     return ImageTk.PhotoImage(image)
 
+
 def save_qr_to_file(data):
     """Prompt the user to save the QR code as a .png file."""
     qr = segno.make(data)  # Generate QR code
@@ -160,29 +155,30 @@ def save_qr_to_file(data):
         qr.save(file_path, kind='png', scale=10)
         print(f"QR Code saved to {file_path}")
 
-def open_save_HTML(data, title):
+
+def open_save_html(data, title):
     """Open a window to prompt the user to save the HTML file."""
     third_window = Toplevel()
     third_window.title("Save HTML File")
-    third_window.configure(bg=BG_COLOR)
+    third_window.configure(bg=config.BG_COLOR)
 
     # Display the title
     tk.Label(
         third_window,
         text=f"Title: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Button to save the HTML file
     tk.Button(
         third_window,
         text="Save HTML File",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
@@ -194,25 +190,25 @@ def open_options_window(title, html_path):
     """Open a window with options after saving the HTML file."""
     options_window = Toplevel()
     options_window.title("Options - Next Steps")
-    options_window.configure(bg=BG_COLOR)
+    options_window.configure(bg=config.BG_COLOR)
 
     # Display the title
     tk.Label(
         options_window,
         text=f"Title: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Button to view the saved HTML file
     tk.Button(
         options_window,
         text="View HTML",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
@@ -223,10 +219,10 @@ def open_options_window(title, html_path):
     tk.Button(
         options_window,
         text="Generate QR Code",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
@@ -238,30 +234,30 @@ def open_qr_code_window(title, html_path):
     """Open a window to display the QR code with Save and Print options."""
     qr_window = Toplevel()
     qr_window.title("QR Code Viewer")
-    qr_window.configure(bg=BG_COLOR)
+    qr_window.configure(bg=config.BG_COLOR)
 
     # Display the title
     tk.Label(
         qr_window,
         text=f"Title: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Display the HTML path
     tk.Label(
         qr_window,
         text=f"HTML Path: {html_path}",
-        font=FONT,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR,
+        font=config.FONT,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR,
         wraplength=380,  # Ensure long paths wrap nicely
     ).pack(pady=10)
 
     # Generate and display the QR code
     qr_image = generate_qr(html_path)  # Generate QR code for the HTML path
-    qr_label = tk.Label(qr_window, image=qr_image, bg=BG_COLOR)
+    qr_label = tk.Label(qr_window, image=qr_image, bg=config.BG_COLOR)
     qr_label.image = qr_image  # Keep a reference to avoid garbage collection
     qr_label.pack(pady=20)
 
@@ -269,10 +265,10 @@ def open_qr_code_window(title, html_path):
     tk.Button(
         qr_window,
         text="Save",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
@@ -283,29 +279,30 @@ def open_qr_code_window(title, html_path):
     tk.Button(
         qr_window,
         text="Print",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
         command=lambda: print(f"Printing QR Code for {html_path}")  # Replace with actual print logic
     ).pack(pady=10)
 
+
 def confirm_delete(title, parent_window):
     """Display a confirmation popup for deleting an entry."""
     confirm_window = Toplevel()
     confirm_window.title("Confirm Delete")
-    confirm_window.configure(bg=BG_COLOR)
+    confirm_window.configure(bg=config.BG_COLOR)
 
     # Confirmation message
     tk.Label(
         confirm_window,
         text=f"Are you sure you want to delete '{title}'?",
-        font=FONT,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR,
+        font=config.FONT,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR,
         wraplength=280,  # Ensure text wraps nicely
     ).pack(pady=10)
 
@@ -313,7 +310,7 @@ def confirm_delete(title, parent_window):
     tk.Button(
         confirm_window,
         text="Yes",
-        font=FONT_BOLD,
+        font=config.FONT_BOLD,
         bg="red",
         fg="white",
         activebackground="#D32F2F",
@@ -327,44 +324,40 @@ def confirm_delete(title, parent_window):
     tk.Button(
         confirm_window,
         text="No",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
         command=confirm_window.destroy
     ).pack(side="right", padx=20, pady=10)
 
-def delete_entry(title):
-    """Delete the entry from the database or file system."""
-    #TODO
-    print(f"Entry '{title}' deleted.")  # Replace with actual delete logic
 
 def open_select_window():
     root = tk.Tk()
     root.title("Select Folder and Title")
-    root.configure(bg=BG_COLOR)
+    root.configure(bg=config.BG_COLOR)
 
     tk.Label(
         root,
         text="Select a folder to view titles:",
-        font=FONT_BOLD,
-        bg=BG_COLOR,
-        fg=TEXT_COLOR
+        font=config.FONT_BOLD,
+        bg=config.BG_COLOR,
+        fg=config.TEXT_COLOR
     ).pack(pady=10)
 
     # Frame for folder selection
-    folder_frame = tk.Frame(root, bg=BG_COLOR)
+    folder_frame = tk.Frame(root, bg=config.BG_COLOR)
     folder_frame.pack(pady=10)
 
     folder_listbox = tk.Listbox(
         folder_frame,
-        font=FONT,
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
-        selectbackground=BUTTON_COLOR,
+        font=config.FONT,
+        bg=config.ENTRY_COLOR,
+        fg=config.TEXT_COLOR,
+        selectbackground=config.BUTTON_COLOR,
         selectforeground="white",
         height=10,
         width=30
@@ -378,21 +371,21 @@ def open_select_window():
     tk.Label(
         root,
         text="Select a title within the folder:",
-        font=FONT_BOLD,
-        bg=BG_COLOR,
-        fg=TEXT_COLOR
+        font=config.FONT_BOLD,
+        bg=config.BG_COLOR,
+        fg=config.TEXT_COLOR
     ).pack(pady=10)
 
     # Frame for title selection
-    title_frame = tk.Frame(root, bg=BG_COLOR)
+    title_frame = tk.Frame(root, bg=config.BG_COLOR)
     title_frame.pack(pady=10)
 
     title_listbox = tk.Listbox(
         title_frame,
-        font=FONT,
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
-        selectbackground=BUTTON_COLOR,
+        font=config.FONT,
+        bg=config.ENTRY_COLOR,
+        fg=config.TEXT_COLOR,
+        selectbackground=config.BUTTON_COLOR,
         selectforeground="white",
         height=10,
         width=30
@@ -460,20 +453,25 @@ def open_select_window():
         root,
         text="Search",
         command=on_search,
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white"
     ).pack(pady=20)
 
     root.mainloop()
 
+
 def get_folders():
     """Fetch all folder (table) names dynamically."""
+    if not config.mysql_username or not config.mysql_password:
+        messagebox.showerror("Login Error", "MySQL credentials are not set. Please log in first.")
+        return []  # Return an empty list if credentials are not set
+
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="YellowMYSQL45*",
+            user=config.mysql_username,
+            password=config.mysql_password,
             database="museum"
         )
         cursor = connection.cursor()
@@ -491,13 +489,14 @@ def get_folders():
             cursor.close()
             connection.close()
 
+
 def get_titles_in_folder(folder):
     """Fetch all titles from a specific folder (table)."""
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="YellowMYSQL45*",
+            user=config.mysql_username,
+            password=config.mysql_password,
             database="museum"
         )
         cursor = connection.cursor()
@@ -516,25 +515,25 @@ def open_what_to_do(data, title):
     """Open a window to display options for the selected title."""
     what_to_do_window = Toplevel()
     what_to_do_window.title("What to Do Next")
-    what_to_do_window.configure(bg=BG_COLOR)
+    what_to_do_window.configure(bg=config.BG_COLOR)
 
     # Display the title
     tk.Label(
         what_to_do_window,
         text=f"Title: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Modify/Delete Button
     tk.Button(
         what_to_do_window,
         text="Modify/Delete Entry",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
@@ -545,15 +544,16 @@ def open_what_to_do(data, title):
     tk.Button(
         what_to_do_window,
         text="Generate HTML/QR",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_save_HTML(data, title)  # Pass both arguments
+        command=lambda: open_save_html(data, title)  # Pass both arguments
     ).pack(pady=10)
+
 
 def open_modify_delete_window(title):
     """Open a window for modifying or deleting the selected entry."""
@@ -583,30 +583,30 @@ def open_modify_delete_window(title):
     # Create Modify/Delete window
     modify_delete_window = Toplevel()
     modify_delete_window.title("Modify/Delete Entry")
-    modify_delete_window.configure(bg=BG_COLOR)
+    modify_delete_window.configure(bg=config.BG_COLOR)
 
     # Display the title
     tk.Label(
         modify_delete_window,
         text=f"Modify/Delete: {title}",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Modify Button
     tk.Button(
         modify_delete_window,
         text="Modify Entry",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        activebackground=TEXT_COLOR,
+        activebackground=config.TEXT_COLOR,
         activeforeground="white",
         padx=10,
         pady=5,
         command=lambda: [
-            Database.send_to_DB_window(title, description, references, location, size, tags),
+            Database.send_to_db_window(title, description, references, location, size, tags),
             modify_delete_window.destroy(),
         ]  # Pass title, description, and references
     ).pack(pady=10)
@@ -615,7 +615,7 @@ def open_modify_delete_window(title):
     tk.Button(
         modify_delete_window,
         text="Delete Entry",
-        font=FONT_BOLD,
+        font=config.FONT_BOLD,
         bg="red",
         fg="white",
         activebackground="#D32F2F",
@@ -625,15 +625,14 @@ def open_modify_delete_window(title):
         command=lambda: confirm_delete(title, modify_delete_window)
     ).pack(pady=10)
 
+
 def get_titles():
     """Fetch all titles dynamically from all tables with a 'title' column."""
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",
-            password="YellowMYSQL45*",
-            # user=mysql_username,  # Use global variable from login window
-            # password=mysql_password,  # Use global variable from login window
+            user=config.mysql_username,
+            password=config.mysql_password,
             database="museum"
         )
         cursor = connection.cursor()
@@ -667,8 +666,8 @@ def fetch_data_for_title_dynamic(title):
     try:
         connection = mysql.connector.connect(
             host="localhost",
-            user="root",  # Use global variable from login window
-            password="YellowMYSQL45*",  # Use global variable from login window
+            user=config.mysql_username,
+            password=config.mysql_password,
             database="museum"
         )
         cursor = connection.cursor()
@@ -717,44 +716,45 @@ def fetch_data_for_title_dynamic(title):
             cursor.close()
             connection.close()
 
+
 def mysql_login_window():
     """Create a login window for MySQL credentials."""
     login_window = tk.Tk()
     login_window.title("MySQL Login")
-    login_window.configure(bg=BG_COLOR)
+    login_window.configure(bg=config.BG_COLOR)
 
     tk.Label(
         login_window,
         text="Enter MySQL Credentials",
-        font=FONT_BOLD,
-        fg=TEXT_COLOR,
-        bg=BG_COLOR
+        font=config.FONT_BOLD,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR
     ).pack(pady=10)
 
     # Username input
-    tk.Label(login_window, text="Username:", font=FONT, bg=BG_COLOR).pack(pady=5)
+    tk.Label(login_window, text="Username:", font=config.FONT, bg=config.BG_COLOR).pack(pady=5)
 
     username_entry = tk.Entry(
         login_window,
-        font=FONT,
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
+        font=config.FONT,
+        bg=config.ENTRY_COLOR,
+        fg=config.TEXT_COLOR,
         width=20  # Predefined length for username box
     )
     username_entry.pack(pady=5)
 
     # Password input frame
-    tk.Label(login_window, text="Password:", font=FONT, bg=BG_COLOR).pack(pady=5)
+    tk.Label(login_window, text="Password:", font=config.FONT, bg=config.BG_COLOR).pack(pady=5)
 
-    password_frame = tk.Frame(login_window, bg=BG_COLOR)
+    password_frame = tk.Frame(login_window, bg=config.BG_COLOR)
     password_frame.pack(pady=5)
 
     # Password entry
     password_entry = tk.Entry(
         password_frame,
-        font=FONT,
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
+        font=config.FONT,
+        bg=config.ENTRY_COLOR,
+        fg=config.TEXT_COLOR,
         show="*",
         width=17  # Slightly shorter to make space for the eye button
     )
@@ -773,8 +773,8 @@ def mysql_login_window():
         password_frame,
         text="👁",
         font=("Arial", 12),
-        bg=ENTRY_COLOR,
-        fg=TEXT_COLOR,
+        bg=config.ENTRY_COLOR,
+        fg=config.TEXT_COLOR,
         relief="flat",
         command=toggle_password,
         width=2,  # Predefined button width
@@ -783,7 +783,7 @@ def mysql_login_window():
     eye_button.pack(side="right", padx=5)
 
     # Caps Lock Indicator
-    caps_lock_label = tk.Label(login_window, text="", font=FONT, bg=BG_COLOR, fg="red")
+    caps_lock_label = tk.Label(login_window, text="", font=config.FONT, bg=config.BG_COLOR, fg="red")
     caps_lock_label.pack(pady=5)
 
     def update_capslock_indicator(event):
@@ -797,10 +797,9 @@ def mysql_login_window():
 
     def submit_credentials():
         """Retrieve credentials and close the login window."""
-        global mysql_username, mysql_password
-        mysql_username = username_entry.get()
-        mysql_password = password_entry.get()
-        if not mysql_username or not mysql_password:
+        config.mysql_username = username_entry.get()
+        config.mysql_password = password_entry.get()
+        if not config.mysql_username or not config.mysql_password:
             messagebox.showwarning("Input Error", "Both username and password are required!")
         else:
             login_window.destroy()
@@ -809,18 +808,78 @@ def mysql_login_window():
     tk.Button(
         login_window,
         text="Login",
-        font=FONT_BOLD,
-        bg=BUTTON_COLOR,
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
         fg="white",
-        command=submit_credentials
+        command=lambda: [submit_credentials(), open_main_menu_window()]
     ).pack(pady=20)
 
     login_window.mainloop()
 
 
+def open_main_menu_window():
+    """Open a window with options to add a new entry or access an existing one."""
+    # Create the window
+    main_menu_window = tk.Tk()
+    main_menu_window.title("Main Menu - Database Operations")
+    main_menu_window.configure(bg=config.BG_COLOR)
+    main_menu_window.geometry("400x300")
+
+    # Title label
+    tk.Label(
+        main_menu_window,
+        text="What would you like to do?",
+        font=config.FONT_BOLD,
+        bg=config.BG_COLOR,
+        fg=config.TEXT_COLOR
+    ).pack(pady=20)
+
+    # Button to add a new entry
+    def open_new_entry():
+        main_menu_window.destroy()
+        Database.make_new_entry()  # Call the function for creating a new entry
+
+    tk.Button(
+        main_menu_window,
+        text="Add New Entry",
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
+        fg="white",
+        activebackground=config.TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=open_new_entry
+    ).pack(pady=20)
+
+    # Button to access an existing entry
+    def access_existing_entry():
+        main_menu_window.destroy()
+        open_select_window()  # Call the function to access existing entries
+
+    tk.Button(
+        main_menu_window,
+        text="Access Existing Entry",
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
+        fg="white",
+        activebackground=config.TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=access_existing_entry
+    ).pack(pady=20)
+
+    main_menu_window.mainloop()
+
+
+def delete_entry(title):
+    """Delete the entry from the database or file system."""
+
+    print(f"Entry '{title}' deleted.")  # Log the action for debugging
+
+
 if __name__ == "__main__":
-    mysql_username = None
-    mysql_password = None
-    #mysql_login_window()  # Prompt for MySQL credentials
-    open_select_window()  # Open the main window after login
+    mysql_login_window()  # Prompt for MySQL credentials
+    # open_main_menu_window()
 
