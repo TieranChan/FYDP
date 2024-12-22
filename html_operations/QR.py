@@ -796,17 +796,30 @@ def mysql_login_window():
     login_window.bind("<KeyPress>", update_capslock_indicator)
 
     def submit_credentials():
-        """Retrieve credentials and close the login window."""
+        """Retrieve credentials, validate them, and handle errors."""
         config.mysql_username = username_entry.get()
         config.mysql_password = password_entry.get()
+
         if not config.mysql_username or not config.mysql_password:
             messagebox.showwarning("Input Error", "Both username and password are required!")
-        else:
-            login_window.destroy()
+            return  # Exit without proceeding further
+
+        # Try to connect to MySQL with the provided credentials
+        try:
+            connection = mysql.connector.connect(
+                host="localhost",  # Update this if the MySQL server is on another host
+                user=config.mysql_username,
+                password=config.mysql_password
+            )
+            connection.close()  # Close connection if successful
+            login_window.destroy()  # Close the login window
+            open_main_menu_window()  # Proceed to the main menu window
+        except mysql.connector.Error as err:
+            messagebox.showerror("Login Failed", f"Invalid credentials: {err}")
+            # Do not close the login window or proceed to the main menu
 
     # Bind Enter key to the submit_credentials function
-    login_window.bind("<Return>", lambda event: [submit_credentials(), open_main_menu_window()])
-
+    login_window.bind("<Return>", lambda event: submit_credentials())
     # Submit button
     tk.Button(
         login_window,
@@ -814,7 +827,7 @@ def mysql_login_window():
         font=config.FONT_BOLD,
         bg=config.BUTTON_COLOR,
         fg="white",
-        command=lambda: [submit_credentials(), open_main_menu_window()]
+        command=submit_credentials
     ).pack(pady=20)
 
     login_window.mainloop()
