@@ -544,7 +544,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     select_window = tk.Tk()
     select_window.title("Select Folder to Store Data")
     select_window.configure(bg=config.BG_COLOR)
-    select_window.geometry("400x500")
+    select_window.geometry("400x600")
 
     # Title label
     tk.Label(
@@ -576,9 +576,51 @@ def open_select_where_to_store_window(title="", description="", references=None,
     folder_listbox.config(yscrollcommand=folder_scrollbar.set)
 
     # Populate the folder list dynamically
-    folders = QR.get_folders()  # Replace with your function to fetch folder names
-    for folder in folders:
-        folder_listbox.insert("end", folder)
+    def refresh_folder_list():
+        folder_listbox.delete(0, "end")  # Clear the listbox
+        folders = QR.get_folders()  # Fetch updated folder names
+        for folder in folders:
+            folder_listbox.insert("end", folder)
+
+    refresh_folder_list()
+
+    # Add New Folder Section
+    def create_new_folder():
+        folder_name = folder_name_entry.get().strip()
+        if folder_name:
+            try:
+                # Add logic to create the folder in the database
+                QR.create_folder(folder_name)  # Replace with your folder creation function
+                tk.messagebox.showinfo("Success", f"Folder '{folder_name}' created successfully!")
+                folder_name_entry.delete(0, "end")  # Clear the input field
+                refresh_folder_list()  # Refresh the folder list
+            except Exception as e:
+                tk.messagebox.showerror("Error", f"Failed to create folder: {e}")
+        else:
+            tk.messagebox.showwarning("Input Error", "Folder name cannot be empty!")
+
+    tk.Label(
+        select_window,
+        text="Create a new folder:",
+        font=config.FONT_BOLD,
+        bg=config.BG_COLOR,
+        fg=config.TEXT_COLOR
+    ).pack(pady=10)
+
+    new_folder_frame = tk.Frame(select_window, bg=config.BG_COLOR)
+    new_folder_frame.pack(pady=10)
+
+    folder_name_entry = tk.Entry(new_folder_frame, font=config.FONT, bg=config.ENTRY_COLOR, fg=config.TEXT_COLOR, width=20)
+    folder_name_entry.pack(side="left", padx=5)
+
+    tk.Button(
+        new_folder_frame,
+        text="Create Folder",
+        font=config.FONT,
+        bg=config.BUTTON_COLOR,
+        fg="white",
+        command=create_new_folder
+    ).pack(side="left", padx=5)
 
     # Button to confirm the selection and send to the database
     def send_to_selected_folder():
@@ -586,12 +628,12 @@ def open_select_where_to_store_window(title="", description="", references=None,
             # Get the selected folder
             selected_folder = folder_listbox.get(folder_listbox.curselection())
             print(f"Data will be sent to folder: {selected_folder}")  # Debug output
-            send_to_database(selected_folder,title, description, references, location, size, tags, image_titles)
+            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles)
             select_window.destroy()
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
 
-    # Button to confirm and proceed
+    # Send Button
     tk.Button(
         select_window,
         text="Send to Database",

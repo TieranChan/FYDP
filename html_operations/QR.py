@@ -804,6 +804,9 @@ def mysql_login_window():
         else:
             login_window.destroy()
 
+    # Bind Enter key to the submit_credentials function
+    login_window.bind("<Return>", lambda event: [submit_credentials(), open_main_menu_window()])
+
     # Submit button
     tk.Button(
         login_window,
@@ -879,7 +882,13 @@ def delete_entry(title):
     print(f"Entry '{title}' deleted.")  # Log the action for debugging
 
 
+def create_folder(folder_name):
+    print(f"I created a folder with name: {folder_name}")
+    #todo
+    #create said folder in MySQL
+
+
 if __name__ == "__main__":
     mysql_login_window()  # Prompt for MySQL credentials
-    # open_main_menu_window()
+    #open_main_menu_window()
 
