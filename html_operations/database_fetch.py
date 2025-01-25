@@ -1,5 +1,14 @@
 from QR import *
-
+import tkinter as tk
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox
+from PIL import Image, ImageTk
+from io import BytesIO
+import segno
+import webbrowser
+from database_operations import Database
+import mysql.connector
+from tkinter import messagebox
+import config
 
 def open_modify_delete_window(title):
     """Open a window for modifying or deleting the selected entry."""
