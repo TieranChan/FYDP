@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 from html_operations import QR
 import config
+from QR import *
 
 
 def parse_size_to_dict(size_str):

@@ -4,12 +4,22 @@ from PIL import Image, ImageTk
 from io import BytesIO
 import segno
 import webbrowser
+import sys
+
+
+"""For DEBUGGING"""
+sys.path.append(r'C:/Users/Tiera/FYDP')
+import database_operations
+
+
 from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
 import config
 from generate_html import *
 from database_fetch import *
+from html_operations.admin_login import *
+
 
 """
 Contains all the functions related to generating the QR codes

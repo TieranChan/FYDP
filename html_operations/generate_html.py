@@ -15,11 +15,12 @@ from QR import *
 File that contains everything to do with html from generation logic to the GUI
 """
 
-def generate_html_page(data, title):
-    """Generate an HTML page dynamically from the fetched data."""
-    def safe(value):
-        return value if value else None
 
+def safe(value):
+    return value if value else None
+    
+"""Helper function to extract specific fields if they exist"""
+def extract_fields(data):
     # Extract specific fields if they exist
     description = safe(data.get("description"))
     location = safe(data.get("location"))
@@ -33,6 +34,12 @@ def generate_html_page(data, title):
     biblio_ref = [safe(data.get(f"reference_{i}")) for i in range(1, 11) if f"reference_{i}" in data and data.get(f"reference_{i}")]
     tags = [safe(data.get(f"tag_{i}")) for i in range(1, 16) if f"tag_{i}" in data and data.get(f"tag_{i}")]
 
+    return description, location, size, image_titles, biblio_ref, tags, size_components
+
+def generate_html_page(data, title):
+    """Generate an HTML page dynamically from the fetched data."""
+   
+    description,location, size, image_titles, biblio_ref, tags, size_components=extract_fields(data)
     html_sections = []
 
     # Add sections conditionally
