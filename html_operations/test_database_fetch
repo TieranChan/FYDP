@@ -1,0 +1,75 @@
+import unittest
+from unittest.mock import patch, MagicMock
+
+from QR import *
+
+"""This function tests everything to do with interaction from the database"""
+
+class TestGetFolders(unittest.TestCase):
+
+    @patch('config.mysql_username', 'test_user')
+    @patch('config.mysql_password', 'test_pass')
+    @patch('mysql.connector.connect')  # Mock mysql.connector.connect
+    @patch('QR.messagebox.showerror')  # Mock the messagebox to avoid actual popups
+    def test_get_folders_success(self, mock_showerror, mock_connect):
+        # Mock the database connection and cursor
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value = mock_connection
+        mock_connection.cursor.return_value = mock_cursor
+
+        # Simulate cursor.fetchall() to return some tables
+        mock_cursor.fetchall.return_value = [('table1',), ('table2',)]
+
+        # Call the function
+        result = get_folders()
+
+
+        self.assertEqual(result, ['table1', 'table2'])
+        mock_connect.assert_called_once_with(
+            host="localhost",
+            user="test_user",
+            password="test_pass",
+            database="museum"
+        )
+        mock_cursor.execute.assert_called_once_with("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE TABLE_SCHEMA = 'museum'
+        """)
+
+
+
+    @patch('config.mysql_username', 'test_user')
+    @patch('config.mysql_password', 'test_pass')
+    @patch('mysql.connector.connect')  # Mock mysql.connector.connect
+    @patch('QR.messagebox.showerror')  # Mock the messagebox to avoid actual popups
+    def test_get_folders_empty_database(self, mock_showerror, mock_connect):
+        # Mock the database connection and cursor
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value = mock_connection
+        mock_connection.cursor.return_value = mock_cursor
+
+        # Simulate cursor.fetchall() returning an empty list (no tables in the database)
+        mock_cursor.fetchall.return_value = []
+
+        # Call the function
+        result = get_folders()
+
+        # Assert that the result is an empty list since the database is empty
+        self.assertEqual(result, [])
+        mock_connect.assert_called_once_with(
+            host="localhost",
+            user="test_user",
+            password="test_pass",
+            database="museum"
+        )
+        mock_cursor.execute.assert_called_once_with("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE TABLE_SCHEMA = 'museum'
+        """)
+
+if __name__ == '__main__':
+    unittest.main()
