@@ -3,10 +3,13 @@ from unittest.mock import patch, MagicMock
 
 from QR import *
 
-"""This function tests everything to do with interaction from the database"""
+"""This file tests everything to do with interaction from the database"""
 
+
+"""Testing get_folder()"""
 class TestGetFolders(unittest.TestCase):
 
+    #Testing getting folders from a populated database
     @patch('config.mysql_username', 'test_user')
     @patch('config.mysql_password', 'test_pass')
     @patch('mysql.connector.connect')  # Mock mysql.connector.connect
@@ -39,7 +42,7 @@ class TestGetFolders(unittest.TestCase):
         """)
 
 
-
+    #Testing getting folders from an empty database
     @patch('config.mysql_username', 'test_user')
     @patch('config.mysql_password', 'test_pass')
     @patch('mysql.connector.connect')  # Mock mysql.connector.connect
@@ -70,6 +73,59 @@ class TestGetFolders(unittest.TestCase):
         FROM INFORMATION_SCHEMA.TABLES 
         WHERE TABLE_SCHEMA = 'museum'
         """)
+
+"""Testing get_titles()"""
+class TestGetTitlesInFolder(unittest.TestCase):
+
+    @patch('config.mysql_username', 'test_user')
+    @patch('config.mysql_password', 'test_pass')
+    @patch('mysql.connector.connect')  # Mock mysql.connector.connect
+    @patch('QR.messagebox.showerror')  # Mock messagebox to avoid actual popups
+    def test_get_titles_in_folder_success(self, mock_showerror, mock_connect):
+        # Mock the database connection and cursor
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value = mock_connection
+        mock_connection.cursor.return_value = mock_cursor
+
+        # Simulate cursor.fetchall() returning some titles
+        mock_cursor.fetchall.return_value = [('Title 1',), ('Title 2',)]
+
+        # Call the function
+        result = get_titles_in_folder("test_folder")
+
+        # Assert that the result is the expected list of titles
+        self.assertEqual(result, ['Title 1', 'Title 2'])
+        mock_connect.assert_called_once_with(
+            host="localhost",
+            user="test_user",
+            password="test_pass",
+            database="museum"
+        )
+        mock_cursor.execute.assert_called_once_with("SELECT title FROM `test_folder`")
+
+    @patch('config.mysql_username', 'test_user')
+    @patch('config.mysql_password', 'test_pass')
+    @patch('mysql.connector.connect')  # Mock mysql.connector.connect
+    @patch('QR.messagebox.showerror')  # Mock messagebox to avoid actual popups
+    def test_get_titles_in_folder_empty(self, mock_showerror, mock_connect):
+        # Mock the database connection and cursor
+        mock_connection = MagicMock()
+        mock_cursor = MagicMock()
+        mock_connect.return_value = mock_connection
+        mock_connection.cursor.return_value = mock_cursor
+
+        # Simulate cursor.fetchall() returning an empty list (no titles in the folder)
+        mock_cursor.fetchall.return_value = []
+
+        # Call the function
+        result = get_titles_in_folder("empty_folder")
+
+        # Assert that the result is an empty list since no titles are found
+        self.assertEqual(result, [])
+        mock_cursor.execute.assert_called_once_with("SELECT title FROM `empty_folder`")
+
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -61,22 +61,57 @@ def validate_and_connect(username, password):
         messagebox.showerror("Login Failed", f"Invalid credentials: {err}")
         # Do not close the login window or proceed to the main menu
         return f"Login Failed: {err}"
+    
+"""
+Method used to fetch all folder (table) names dynamically
+"""
+def get_folders():
+    """Fetch all folder (table) names dynamically."""
+    if not config.mysql_username or not config.mysql_password:
+        messagebox.showerror("Login Error", "MySQL credentials are not set. Please log in first.")
+        return []  # Return an empty list if credentials are not set
 
-"""submit_credentials() deals only with GUI-specific behaviour"""
-def submit_credentials():
-    """Retrieve credentials, validate them, and handle errors."""
-    config.mysql_username = username_entry.get()
-    config.mysql_password = password_entry.get()
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user=config.mysql_username,
+            password=config.mysql_password,
+            database="museum"
+        )
+        cursor = connection.cursor()
+        cursor.execute("""
+        SELECT TABLE_NAME 
+        FROM INFORMATION_SCHEMA.TABLES 
+        WHERE TABLE_SCHEMA = 'museum'
+        """)
+        return [row[0] for row in cursor.fetchall()]
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching folders: {err}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
 
-    result=validate_and_connect(config.mysql_username, config.mysql_password)
-
-    if result == "Success":
-        messagebox.showinfo("Login Successful", "You are logged in!")
-        login_window.destroy()  # Close the login window
-        open_main_menu_window()  # Proceed to the main menu window
-
-    elif "Both username and password are required!" in result:
-        messagebox.showwarning("Input Error", result)
-
-    else:
-        messagebox.showerror("Login Failed", result)
+"""
+Method to fetch all titles from a specific folder
+"""
+def get_titles_in_folder(folder):
+    """Fetch all titles from a specific folder (table)."""
+    try:
+        connection = mysql.connector.connect(
+            host="localhost",
+            user=config.mysql_username,
+            password=config.mysql_password,
+            database="museum"
+        )
+        cursor = connection.cursor()
+        cursor.execute(f"SELECT title FROM `{folder}`")
+        return [row[0] for row in cursor.fetchall()]
+    except mysql.connector.Error as err:
+        messagebox.showerror("Database Error", f"Error fetching titles from {folder}: {err}")
+        return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
