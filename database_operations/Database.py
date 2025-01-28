@@ -1,7 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
-from html_operations import QR
+import sys
+sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
+from html_operations import QR
 
 
 def parse_size_to_dict(size_str):
