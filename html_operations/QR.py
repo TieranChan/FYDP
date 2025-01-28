@@ -12,25 +12,15 @@ from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
 
+from logic import *
+
+
+
 
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
-    def safe(value):
-        return value if value else None
-
-    # Extract specific fields if they exist
-    description = safe(data.get("description"))
-    location = safe(data.get("location"))
-    size_components = [
-        f"H: {safe(data.get('hight'))}",
-        f"W: {safe(data.get('width'))}",
-        f"L: {safe(data.get('length'))}"
-    ]
-    size = ", ".join(filter(None, size_components))
-    image_titles = [safe(data.get(f"img_{i}")) for i in range(1, 6) if f"img_{i}" in data and data.get(f"img_{i}")]
-    biblio_ref = [safe(data.get(f"reference_{i}")) for i in range(1, 11) if f"reference_{i}" in data and data.get(f"reference_{i}")]
-    tags = [safe(data.get(f"tag_{i}")) for i in range(1, 16) if f"tag_{i}" in data and data.get(f"tag_{i}")]
-
+   
+    description,location, size, image_titles, biblio_ref, tags, size_components=extract_fields(data)
     html_sections = []
 
     # Add sections conditionally
@@ -718,6 +708,9 @@ def fetch_data_for_title_dynamic(title):
         if connection.is_connected():
             cursor.close()
             connection.close()
+
+
+
 
 
 def mysql_login_window():
