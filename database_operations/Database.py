@@ -1,26 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 import sys
-sys.path.append(r"C:\Users\Tiera\FYDP")
+from database_logic import *
 import config
 from html_operations import QR
 
 
-def parse_size_to_dict(size_str):
-    """Convert a size string or dictionary into a dictionary."""
-    if isinstance(size_str, dict):
-        return size_str  # Already a dictionary, return as is
-    size_dict = {"length": "", "width": "", "height": ""}
-    if isinstance(size_str, str):
-        size_parts = size_str.split()
-        for part in size_parts:
-            if part.startswith("Length:"):
-                size_dict["length"] = part.split(":")[1].strip()
-            elif part.startswith("Width:"):
-                size_dict["width"] = part.split(":")[1].strip()
-            elif part.startswith("Height:"):
-                size_dict["height"] = part.split(":")[1].strip()
-    return size_dict
 
 
 def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4):

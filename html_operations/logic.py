@@ -117,7 +117,7 @@ def get_titles_in_folder(folder):
             connection.close()
 
 """
-Dynamically fetches data for the title
+Dynamically fetches data for the title when you click login
 """
 def fetch_data_for_title_dynamic(title):
     """Fetch detailed information (title, description, images, references, location, size, tags) for a given title from any table dynamically."""
