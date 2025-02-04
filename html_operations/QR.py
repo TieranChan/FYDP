@@ -454,55 +454,6 @@ def open_select_window():
     root.mainloop()
 
 
-def get_folders():
-    """Fetch all folder (table) names dynamically."""
-    if not config.mysql_username or not config.mysql_password:
-        messagebox.showerror("Login Error", "MySQL credentials are not set. Please log in first.")
-        return []  # Return an empty list if credentials are not set
-
-    try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user=config.mysql_username,
-            password=config.mysql_password,
-            database="museum"
-        )
-        cursor = connection.cursor()
-        cursor.execute("""
-        SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = 'museum'
-        """)
-        return [row[0] for row in cursor.fetchall()]
-    except mysql.connector.Error as err:
-        messagebox.showerror("Database Error", f"Error fetching folders: {err}")
-        return []
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-
-
-def get_titles_in_folder(folder):
-    """Fetch all titles from a specific folder (table)."""
-    try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user=config.mysql_username,
-            password=config.mysql_password,
-            database="museum"
-        )
-        cursor = connection.cursor()
-        cursor.execute(f"SELECT title FROM `{folder}`")
-        return [row[0] for row in cursor.fetchall()]
-    except mysql.connector.Error as err:
-        messagebox.showerror("Database Error", f"Error fetching titles from {folder}: {err}")
-        return []
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-
 
 def open_what_to_do(data, title):
     """Open a window to display options for the selected title."""
@@ -619,95 +570,10 @@ def open_modify_delete_window(title):
     ).pack(pady=10)
 
 
-def get_titles():
-    """Fetch all titles dynamically from all tables with a 'title' column."""
-    try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user=config.mysql_username,
-            password=config.mysql_password,
-            database="museum"
-        )
-        cursor = connection.cursor()
-
-        # Find all tables with a 'title' column
-        cursor.execute("""
-        SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
-        """)
-        tables = [row[0] for row in cursor.fetchall()]
-
-        # Retrieve all titles from those tables
-        titles = []
-        for table in tables:
-            cursor.execute(f"SELECT title FROM `{table}`")
-            titles.extend([row[0] for row in cursor.fetchall()])
-
-        return titles
-    except mysql.connector.Error as err:
-        messagebox.showerror("Database Error", f"Error fetching titles: {err}")
-        return []
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
 
 
-def fetch_data_for_title_dynamic(title):
-    """Fetch detailed information (title, description, images, references, location, size, tags) for a given title from any table dynamically."""
-    try:
-        connection = mysql.connector.connect(
-            host="localhost",
-            user=config.mysql_username,
-            password=config.mysql_password,
-            database="museum"
-        )
-        cursor = connection.cursor()
 
-        # Find all tables with a 'title' column
-        cursor.execute("""
-        SELECT TABLE_NAME 
-        FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
-        """)
-        tables = [row[0] for row in cursor.fetchall()]
 
-        # Search for the title in each table
-        for table in tables:
-            query = f"""
-            SELECT title, description, 
-                   img_1, img_2, img_3, img_4, img_5, 
-                   reference_1, reference_2, reference_3, reference_4, reference_6, reference_7, reference_8, reference_9, reference_10,
-                   location, 
-                   hight, width, length, 
-                   tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
-            FROM `{table}`
-            WHERE title = %s
-            """
-            cursor.execute(query, (title,))
-            result = cursor.fetchone()
-            if result:
-                # Build a detailed dictionary of the result
-                columns = [
-                    "title", "description",
-                    "img_1", "img_2", "img_3", "img_4", "img_5",
-                    "reference_1", "reference_2", "reference_3", "reference_4", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
-                    "location",
-                    "hight", "width", "length",
-                    "tag_1", "tag_2", "tag_3", "tag_4", "tag_5", "tag_6", "tag_7", "tag_8", "tag_9", "tag_10",
-                    "tag_11", "tag_12", "tag_13", "tag_14", "tag_15"
-                ]
-                detailed_info = dict(zip(columns, result))
-                return detailed_info, table  # Return detailed info and table name
-        return None, None  # No matching title found
-    except mysql.connector.Error as err:
-        messagebox.showerror("Database Error", f"Error fetching data: {err}")
-        return None, None
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
 
 
 
@@ -790,6 +656,26 @@ def mysql_login_window():
 
     # Bind key events to update the Caps Lock indicator
     login_window.bind("<KeyPress>", update_capslock_indicator)
+
+
+    """submit_credentials() deals only with GUI-specific behaviour"""
+    def submit_credentials():
+        """Retrieve credentials, validate them, and handle errors."""
+        config.mysql_username = username_entry.get()
+        config.mysql_password = password_entry.get()
+
+        result=validate_and_connect(config.mysql_username, config.mysql_password)
+
+        if result == "Success":
+            messagebox.showinfo("Login Successful", "You are logged in!")
+            login_window.destroy()  # Close the login window
+            open_main_menu_window()  # Proceed to the main menu window
+
+        elif "Both username and password are required!" in result:
+            messagebox.showwarning("Input Error", result)
+
+        else:
+            messagebox.showerror("Login Failed", result)
 
     def submit_credentials():
         """Retrieve credentials, validate them, and handle errors."""
