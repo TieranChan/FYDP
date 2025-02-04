@@ -13,3 +13,9 @@ def parse_size_to_dict(size_str):
             elif part.startswith("Height:"):
                 size_dict["height"] = part.split(":")[1].strip()
     return size_dict
+
+
+def send_to_database(folder, title="", description="", references=None, location="", size="", tags="", image_titles=None):
+    # TODO
+    # À implementer par LAPLANTE
+    print("Sent to database")
