@@ -6,15 +6,19 @@ import segno
 import webbrowser
 import sys
 sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
-import Database
+from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
+import sys
 
 from logic import *
 
 
+def on_closing():
+    """Function to exit the application when the window is closed."""
+    sys.exit()  # Forcefully exits the program
 
 
 def generate_html_page(data, title):
@@ -155,6 +159,8 @@ def open_save_html(data, title):
     third_window.title("Save HTML File")
     third_window.configure(bg=config.BG_COLOR)
 
+    third_window.protocol("WM_DELETE_WINDOW", on_closing)
+
     # Display the title
     tk.Label(
         third_window,
@@ -178,12 +184,29 @@ def open_save_html(data, title):
         command=lambda: [generate_html_page(data, title), third_window.destroy()]  # Pass both arguments
     ).pack(pady=20)
 
+    # Back button
+    back_button = tk.Button(
+        third_window,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            third_window.destroy(),
+            open_what_to_do(data, title)
+        )
+    )
+    back_button.pack(pady=10)
+
+
 
 def open_options_window(title, html_path):
     """Open a window with options after saving the HTML file."""
     options_window = Toplevel()
     options_window.title("Options - Next Steps")
     options_window.configure(bg=config.BG_COLOR)
+
+    options_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Display the title
     tk.Label(
@@ -219,7 +242,7 @@ def open_options_window(title, html_path):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_qr_code_window(title, html_path)
+        command=lambda: (open_qr_code_window(title, html_path), options_window.destroy())
     ).pack(pady=10)
 
 
@@ -228,6 +251,8 @@ def open_qr_code_window(title, html_path):
     qr_window = Toplevel()
     qr_window.title("QR Code Viewer")
     qr_window.configure(bg=config.BG_COLOR)
+
+    qr_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Display the title
     tk.Label(
@@ -282,12 +307,28 @@ def open_qr_code_window(title, html_path):
         command=lambda: print(f"Printing QR Code for {html_path}")  # Replace with actual print logic
     ).pack(pady=10)
 
+    # Back button
+    back_button = tk.Button(
+        qr_window,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            qr_window.destroy(),
+            open_options_window(title, html_path)
+        )
+    )
+    back_button.pack(pady=10)
+
 
 def confirm_delete(title, parent_window):
     """Display a confirmation popup for deleting an entry."""
     confirm_window = Toplevel()
     confirm_window.title("Confirm Delete")
     confirm_window.configure(bg=config.BG_COLOR)
+
+    confirm_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Confirmation message
     tk.Label(
@@ -310,7 +351,7 @@ def confirm_delete(title, parent_window):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: [delete_entry(title), confirm_window.destroy(), parent_window.destroy()]  # Close both windows
+        command=lambda: (delete_entry(title), confirm_window.destroy(), parent_window.destroy(), open_select_window())  # Close both windows
     ).pack(side="left", padx=20, pady=10)
 
     # No button - Closes the confirmation window
@@ -324,7 +365,7 @@ def confirm_delete(title, parent_window):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=confirm_window.destroy
+        command=lambda : (confirm_window.destroy(), parent_window.destroy(), open_modify_delete_window(title))
     ).pack(side="right", padx=20, pady=10)
 
 
@@ -332,6 +373,8 @@ def open_select_window():
     root = tk.Tk()
     root.title("Select Folder and Title")
     root.configure(bg=config.BG_COLOR)
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
 
     tk.Label(
         root,
@@ -434,6 +477,7 @@ def open_select_window():
             data, table = fetch_data_for_title_dynamic(selected_title)
 
             if data:
+                root.withdraw()
                 open_what_to_do(data, selected_title)  # Pass the data and title to the next window
             else:
                 messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
@@ -451,6 +495,20 @@ def open_select_window():
         fg="white"
     ).pack(pady=20)
 
+    # Back button
+    back_button = tk.Button(
+        root,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            root.destroy(),
+            open_main_menu_window()
+        )
+    )
+    back_button.pack(pady=10)
+
     root.mainloop()
 
 
@@ -460,6 +518,8 @@ def open_what_to_do(data, title):
     what_to_do_window = Toplevel()
     what_to_do_window.title("What to Do Next")
     what_to_do_window.configure(bg=config.BG_COLOR)
+
+    what_to_do_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Display the title
     tk.Label(
@@ -481,7 +541,7 @@ def open_what_to_do(data, title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_modify_delete_window(title)
+        command=lambda: (open_modify_delete_window(title), what_to_do_window.destroy())
     ).pack(pady=10)
 
     # Generate HTML/QR Button
@@ -495,8 +555,22 @@ def open_what_to_do(data, title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: open_save_html(data, title)  # Pass both arguments
+        command=lambda: (open_save_html(data, title), what_to_do_window.destroy())   # Pass both arguments
     ).pack(pady=10)
+
+    # Back button
+    back_button = tk.Button(
+        what_to_do_window,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            what_to_do_window.destroy(),
+            open_select_window()
+        )
+    )
+    back_button.pack(pady=10)
 
 
 def open_modify_delete_window(title):
@@ -528,6 +602,8 @@ def open_modify_delete_window(title):
     modify_delete_window = Toplevel()
     modify_delete_window.title("Modify/Delete Entry")
     modify_delete_window.configure(bg=config.BG_COLOR)
+
+    modify_delete_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     # Display the title
     tk.Label(
@@ -566,17 +642,22 @@ def open_modify_delete_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: confirm_delete(title, modify_delete_window)
+        command=lambda: (confirm_delete(title, modify_delete_window), modify_delete_window.destroy())
     ).pack(pady=10)
 
-
-
-
-
-
-
-
-
+    # Back button
+    back_button = tk.Button(
+        modify_delete_window,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            modify_delete_window.destroy(),
+            open_what_to_do(data, title)
+        )
+    )
+    back_button.pack(pady=10)
 
 
 def mysql_login_window():
@@ -584,6 +665,8 @@ def mysql_login_window():
     login_window = tk.Tk()
     login_window.title("MySQL Login")
     login_window.configure(bg=config.BG_COLOR)
+
+    login_window.protocol("WM_DELETE_WINDOW", on_closing)
 
     tk.Label(
         login_window,
@@ -723,6 +806,8 @@ def open_main_menu_window():
     main_menu_window.configure(bg=config.BG_COLOR)
     main_menu_window.geometry("400x300")
 
+    main_menu_window.protocol("WM_DELETE_WINDOW", on_closing)
+
     # Title label
     tk.Label(
         main_menu_window,
@@ -784,6 +869,6 @@ def create_folder(folder_name):
 
 
 if __name__ == "__main__":
-    mysql_login_window()  # Prompt for MySQL credentials
-    #open_main_menu_window()
+    #mysql_login_window()  # Prompt for MySQL credentials
+    open_main_menu_window()
 

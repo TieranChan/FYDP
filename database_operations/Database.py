@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 import sys
-from database_logic import *
+from database_operations.database_logic import *
 import config
 from html_operations import QR
 
@@ -10,7 +10,6 @@ from html_operations import QR
 
 def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4):
     """Creates Window 6: Display title, description, image titles, and send button."""
-    # Create Window 6
     window_6 = tk.Tk()
     window_6.title("Window 6 - Display Collected Data")
     window_6.configure(bg=config.BG_COLOR)

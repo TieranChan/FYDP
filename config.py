@@ -3,8 +3,8 @@ mysql_username = None
 mysql_password = None
 
 # MySQL Credentials prefilled
-#mysql_username = "root"
-#mysql_password = "YellowMYSQL45*"
+mysql_username = "root"
+mysql_password = "YellowMYSQL45*"
 
 #global color scheme
 BG_COLOR = "#E0F0FD"  # Light blue background

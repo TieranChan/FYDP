@@ -6,7 +6,7 @@ import segno
 import webbrowser
 import sys
 sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
-import Database
+from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
