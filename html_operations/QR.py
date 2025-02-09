@@ -7,6 +7,7 @@ import webbrowser
 import sys
 sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
 from database_operations import Database
+from database_operations import Database_existing
 import mysql.connector
 from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
@@ -626,7 +627,7 @@ def open_modify_delete_window(title):
         padx=10,
         pady=5,
         command=lambda: [
-            Database.send_to_db_window(title, description, references, location, size, tags),
+            Database_existing.send_to_db_window(title, description, references, location, size, tags),
             modify_delete_window.destroy(),
         ]  # Pass title, description, and references
     ).pack(pady=10)
