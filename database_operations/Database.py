@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 from html_operations import QR
 import config
+import mysql.connector
 
 
 def parse_size_to_dict(size_str):
@@ -102,7 +103,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
 
     # Display size
     if size:
-        size_str = f"Length: {size.get('length', '')} Width: {size.get('width', '')} Height: {size.get('height', '')}"
+        size_str = f"Length: {size["Length"]} Width: {size["Width"]} Height: {size["Height"]}"
         create_centered_label(size_str.strip(), font=config.FONT)
     else:
         create_centered_label("No sizes were given", font=config.FONT_BOLD, fg="red")
@@ -696,42 +697,42 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref="", l
         else:
             description_error.config(text="")
 
-        # Initialize size as an empty string
-        size = ""
+            # Initialize size as an empty dictionary; Laplante's modifying this shit
+            size = {}
 
-        # Check for the presence of any dimension and validate them
-        if length or width or height:
-            try:
-                # Convert dimensions to float, if provided
-                if length:
-                    length = float(length)
-                if width:
-                    width = float(width)
-                if height:
-                    height = float(height)
+            # Check for the presence of any dimension and validate them
+            if length or width or height:
+                try:
+                    # Convert dimensions to float, if provided
+                    if length:
+                        length = float(length)
+                    if width:
+                        width = float(width)
+                    if height:
+                        height = float(height)
 
-                # Ensure the dimensions don't exceed the maximum allowed size
-                if (length and length > 99999.99) or (width and width > 99999.99) or (height and height > 99999.99):
-                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    # Ensure the dimensions don't exceed the maximum allowed size
+                    if (length and length > 99999.99) or (width and width > 99999.99) or (height and height > 99999.99):
+                        size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                        is_valid = False
+                    else:
+                        size_error.config(text="")  # Clear error if sizes are valid
+
+                    # Build the size string based on the dimensions provided
+                    if length:
+                        size["Length"] = length
+                    if width:
+                        size["Width"] = width
+                    if height:
+                        size["Height"] = height
+
+                    # size = size.strip()  # Remove any trailing spaces Laplante keeping this in case we do go back to string
+
+                except ValueError:
+                    size_error.config(text="Please enter valid numeric values for size", fg="red")
                     is_valid = False
-                else:
-                    size_error.config(text="")  # Clear error if sizes are valid
-
-                # Build the size string based on the dimensions provided
-                if length:
-                    size += f"Length: {length} "
-                if width:
-                    size += f"Width: {width} "
-                if height:
-                    size += f"Height: {height} "
-
-                size = size.strip()  # Remove any trailing spaces
-
-            except ValueError:
-                size_error.config(text="Please enter valid numeric values for size", fg="red")
-                is_valid = False
-        else:
-            size = ""  # If no dimensions are provided, leave size empty
+            else:
+                size = {}  # If no dimensions are provided, leave size empty
 
         # If all inputs are valid, proceed to open Window 6 and destroy Window 4
         if is_valid:
@@ -1043,10 +1044,191 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref="", l
     window_4.mainloop()
 
 
-def send_to_database(folder, title="", description="", references=None, location="", size="", tags="", image_titles=None):
+#Warning, ye who dares venture below shall enter Laplante's battlefield
+def ugly_image(images):
+    """Extracting each image into its own field, but I can't knowm how many images there actually are"""
+    if len(images) >= 1:
+        img_1 = images[0]
+    else:
+        img_1 = "NULL"
+    if len(images) >= 2:
+        img_2 = images[1]
+    else:
+        img_2 = "NULL"
+    if len(images) >= 3:
+        img_3 = images[2]
+    else:
+        img_3 = "NULL"
+    if len(images) >= 4:
+        img_4 = images[3]
+    else:
+        img_4 = "NULL"
+    if len(images) == 5:
+        img_5 = images[4]
+    else:
+        img_5 = "NULL"
+
+    return img_1, img_2, img_3, img_4, img_5
+
+def ugly_refs(refs):
+    """Extracting each reference into its own field, but I can't knowm how many references there actually are"""
+    if len(refs) >= 1:
+        ref_1 = f"\'{refs[0]}\'"
+    else:
+        ref_1 = "NULL"
+    if len(refs) >= 2:
+        ref_2 = f"\'{refs[1]}\'"
+    else:
+        ref_2 = "NULL"
+    if len(refs) >= 3:
+        ref_3 = f"\'{refs[2]}\'"
+    else:
+        ref_3 = "NULL"
+    if len(refs) >= 4:
+        ref_4 = f"\'{refs[3]}\'"
+    else:
+        ref_4 = "NULL"
+    if len(refs) >= 5:
+        ref_5 = f"\'{refs[4]}\'"
+    else:
+        ref_5 = "NULL"
+    if len(refs) >= 6:
+        ref_6 = f"\'{refs[5]}\'"
+    else:
+        ref_6 = "NULL"
+    if len(refs) >= 7:
+        ref_7 = f"\'{refs[6]}\'"
+    else:
+        ref_7 = "NULL"
+    if len(refs) >= 8:
+        ref_8 = f"\'{refs[7]}\'"
+    else:
+        ref_8 = "NULL"
+    if len(refs) >= 9:
+        ref_9 = f"\'{refs[8]}\'"
+    else:
+        ref_9 = "NULL"
+    if len(refs) == 10:
+        ref_10 = f"\'{refs[9]}\'"
+    else:
+        ref_10 = "NULL"
+
+    return ref_1, ref_2, ref_3, ref_4, ref_5, ref_6, ref_7, ref_8, ref_9, ref_10
+
+def ugly_tags(tags):
+    """Extracting each tag into its own field, but I can't knowm how many tags there actually are"""
+    if len(tags) >= 1:
+        tag_1 = f"\'{tags[0]}\'"
+    else:
+        tag_1 = "NULL"
+    if len(tags) >= 2:
+        tag_2 = f"\'{tags[1]}\'"
+    else:
+        tag_2 = "NULL"
+    if len(tags) >= 3:
+        tag_3 = f"\'{tags[2]}\'"
+    else:
+        tag_3 = "NULL"
+    if len(tags) >= 4:
+        tag_4 = f"\'{tags[3]}\'"
+    else:
+        tag_4 = "NULL"
+    if len(tags) >= 5:
+        tag_5 = f"\'{tags[4]}\'"
+    else:
+        tag_5 = "NULL"
+    if len(tags) >= 6:
+        tag_6 = f"\'{tags[5]}\'"
+    else:
+        tag_6 = "NULL"
+    if len(tags) >= 7:
+        tag_7 = f"\'{tags[6]}\'"
+    else:
+        tag_7 = "NULL"
+    if len(tags) >= 8:
+        tag_8 = f"\'{tags[7]}\'"
+    else:
+        tag_8 = "NULL"
+    if len(tags) >= 9:
+        tag_9 = f"\'{tags[8]}\'"
+    else:
+        tag_9 = "NULL"
+    if len(tags) >= 10:
+        tag_10 = f"\'{tags[9]}\'"
+    else:
+        tag_10 = "NULL"
+    if len(tags) >= 11:
+        tag_11 = f"\'{tags[10]}\'"
+    else:
+        tag_11 = "NULL"
+    if len(tags) >= 12:
+        tag_12 = f"\'{tags[11]}\'"
+    else:
+        tag_12 = "NULL"
+    if len(tags) >= 13:
+        tag_13 = f"\'{tags[12]}\'"
+    else:
+        tag_13 = "NULL"
+    if len(tags) >= 14:
+        tag_14 = f"\'{tags[13]}\'"
+    else:
+        tag_14 = "NULL"
+    if len(tags) == 15:
+        tag_15 = f"\'{tags[14]}\'"
+    else:
+        tag_15 = "NULL"
+
+    return tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
+
+def ugly_dims(dimensions):
+    """Extracting values from potentially non-existent fields in a dictionary"""
+    try:
+        length = f"\'{dimensions["Length"]}\'"
+    except:
+        length = "NULL"
+    try:
+        width= f"\'{dimensions["Width"]}\'"
+    except:
+        width = "NULL"
+    try:
+        height = f"\'{dimensions["Height"]}\'"
+    except:
+        height = "NULL"
+
+    return length, width, height
+
+def send_to_database(folder, title, description, references, location, size, tags, image_titles):
     # TODO
     # À implementer par LAPLANTE
-    print("Sent to database")
+
+    img_1, img_2, img_3, img_4, img_5 = ugly_image(image_titles)
+    ref_1, ref_2, ref_3, ref_4, ref_5, ref_6, ref_7, ref_8, ref_9, ref_10 = ugly_refs(references)
+    tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15 = ugly_tags(tags)
+    length, width, height = ugly_dims(size)
+    title = title.replace('\'', '\\\'').replace('"', '\\"')
+    description = description.replace('\'', '\\\'').replace('"', '\\"')
+    location = location.replace('\'', '\\\'').replace('"', '\\"')
+
+    command = (f"insert into {folder} values (\'{title}\',\'{description}\',\'01\',{img_1},{img_2},{img_3},{img_4},{img_5},"
+               f"'{location}',{ref_1},{ref_2},{ref_3},{ref_4},{ref_5},{ref_6},{ref_7},{ref_8},{ref_9},{ref_10},{tag_1},"
+               f"{tag_2},{tag_3},{tag_4},{tag_5},{tag_6},{tag_7},{tag_8},{tag_9},{tag_10},{tag_11},{tag_12},{tag_13},"
+               f"{tag_14},{tag_15},{length},{width},{height});")
+
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_v2",
+        use_pure=True
+    )
+
+    cursor = connection.cursor()
+    cursor.execute(command)
+    connection.commit()
+
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
 
 
 if __name__ == "__main__":
