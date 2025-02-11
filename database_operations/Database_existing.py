@@ -3,7 +3,8 @@ from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, 
 import sys
 from database_operations.database_logic import *
 import config
-from html_operations import QR
+#from html_operations import QR
+from html_operations import logic
 
 
 
@@ -564,7 +565,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     # Populate the folder list dynamically
     def refresh_folder_list():
         folder_listbox.delete(0, "end")  # Clear the listbox
-        folders = QR.get_folders()  # Fetch updated folder names
+        folders = logic.get_folders()  # Fetch updated folder names
         for folder in folders:
             folder_listbox.insert("end", folder)
 
@@ -576,7 +577,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
         if folder_name:
             try:
                 # Add logic to create the folder in the database
-                QR.create_folder(folder_name)  # Replace with your folder creation function
+                logic.create_folder(folder_name)  # Replace with your folder creation function
                 tk.messagebox.showinfo("Success", f"Folder '{folder_name}' created successfully!")
                 folder_name_entry.delete(0, "end")  # Clear the input field
                 refresh_folder_list()  # Refresh the folder list

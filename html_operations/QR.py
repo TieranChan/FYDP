@@ -6,13 +6,21 @@ import segno
 import webbrowser
 import sys
 sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
-from database_operations import Database
-from database_operations import Database_existing
+
+#from database_operations import Database
+#from database_operations.Database_existing import Database_existing
+import importlib.util
+import sys
+sys.path.append(r"C:\Users\Tiera\FYDP")
+
+spec = importlib.util.spec_from_file_location("database_existing", r"C:\Users\Tiera\FYDP\database_operations\Database_existing.py")
+database_existing = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(database_existing)
 import mysql.connector
 from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
-import sys
+
 
 from logic import *
 
