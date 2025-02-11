@@ -1,3 +1,10 @@
+# In this file, the size information is treated as a dictionary with keys for 'length', 'width', and 'height'.
+# This structured approach allows for more flexibility when processing size data, such as for validation, storage, and calculations.
+# The size dictionary is passed throughout the GUI, ensuring that the individual components (length, width, height) are handled separately.
+# In the final check window, the size is formatted and displayed in a more structured manner using the dictionary format.
+# This allows for easier manipulation of size data and provides a more robust way of managing the size information.
+
+
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 import sys

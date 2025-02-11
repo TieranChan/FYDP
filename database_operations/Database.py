@@ -1,3 +1,8 @@
+# In this file, the size information is treated as a string and is passed directly to the GUI for display.
+# When the size is provided (e.g., "Length: 10 Width: 20 Height: 5"), it is shown as a simple string in the final check window.
+# The size is not structured in a specific format (e.g., dictionary or object), which makes it less flexible for more complex operations.
+# The size is displayed as a single string concatenating the length, width, and height.
+
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
 import sys
