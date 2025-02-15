@@ -13,9 +13,9 @@ import importlib.util
 import sys
 sys.path.append(r"C:\Users\Tiera\FYDP")
 
-spec = importlib.util.spec_from_file_location("database_existing", r"C:\Users\Tiera\FYDP\database_operations\Database_existing.py")
-database_existing = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(database_existing)
+spec = importlib.util.spec_from_file_location("Database_existing", r"C:\Users\Tiera\FYDP\database_operations\Database_existing.py")
+Database_existing = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(Database_existing)
 import mysql.connector
 from tkinter import messagebox
 sys.path.append(r"C:\Users\Tiera\FYDP")
@@ -878,6 +878,6 @@ def create_folder(folder_name):
 
 
 if __name__ == "__main__":
-    #mysql_login_window()  # Prompt for MySQL credentials
-    open_main_menu_window()
+    mysql_login_window()  # Prompt for MySQL credentials
+    #open_main_menu_window()
 
