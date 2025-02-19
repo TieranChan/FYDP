@@ -4,13 +4,15 @@
 # The size is displayed as a single string concatenating the length, width, and height.
 
 import tkinter as tk
-from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas
+from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas, messagebox
 import sys
 from database_operations.database_logic import *
 import config
-from html_operations import QR
+from html_operations import QR, logic
+import mysql.connector
+import hashlib
 
-def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4):
+def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4, id_num=None):
     """Creates Window 6: Display title, description, image titles, and send button."""
     window_6 = tk.Tk()
     window_6.title("Window 6 - Display Collected Data")
@@ -61,7 +63,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         images_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
         images_frame.pack(pady=10)
         for image in image_titles:
-            create_centered_label(image, font=config.FONT)
+            create_centered_label(image.split('/')[-1], font=config.FONT) #Laplante changing this to still keep full file pathes, but only show file name
     else:
         create_centered_label("No images were sent", font=config.FONT_BOLD, fg="red")
 
@@ -86,7 +88,8 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     # Display size as a string (instead of a dictionary)
     if size:
         create_centered_label("Size:", font=config.FONT_BOLD)
-        create_centered_label(size, font=config.FONT)
+        size_str = f"Length: {size['Length']} Width: {size['Width']} Height: {size['Height']}" #Laplante importing this from his solution
+        create_centered_label(size_str, font=config.FONT)
     else:
         create_centered_label("No sizes were given", font=config.FONT_BOLD, fg="red")
 
@@ -114,9 +117,10 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
                 description=description,
                 references=biblio_ref,
                 location=location,
-                size=size,  # Pass size as a string
+                size=size,  # Pass size as a dict
                 tags=tags,
-                image_titles=image_titles
+                image_titles=image_titles,
+                id_num=id_num
             )
         )
     )
@@ -131,7 +135,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         bg=config.BUTTON_COLOR,
         command=lambda: (
             window_6.destroy(),
-            open_select_where_to_store_window(title, description, references=biblio_ref, location=location, size=size, tags=tags, image_titles=image_titles)
+            open_select_where_to_store_window(title, description, references=biblio_ref, location=location, size=size, tags=tags, image_titles=image_titles, id_num=id_num)
         )
     )
     send_button.pack(pady=20)
@@ -139,7 +143,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     window_6.mainloop()
 
 
-def send_to_db_window(title="", description="", references=None, location="", size="", tags="", image_titles=None):
+def send_to_db_window(title="", description="", references=None, location="", size={}, tags="", image_titles=None, id_num=None):
     """Creates Window 4: Display title, description, and reference input functionality."""
     window_4 = tk.Tk()
     window_4.title("4 Database - Insert Images")
@@ -152,21 +156,10 @@ def send_to_db_window(title="", description="", references=None, location="", si
         tags = []
 
     # Initialize the preloaded size values with defaults.
-    length_value = ""
-    width_value = ""
-    height_value = ""
+    length_value = size['Length']
+    width_value = size['Width']
+    height_value = size['Height']
 
-    # If a size string was passed in (e.g. "Length: 10 Width: 20 Height: 5"), split it
-    if size:
-        parts = size.split()
-        try:
-            # Assumes the size string is in the format:
-            # "Length: 10 Width: 20 Height: 5"
-            length_value = parts[1] if len(parts) >= 2 else ""
-            width_value  = parts[3] if len(parts) >= 4 else ""
-            height_value = parts[5] if len(parts) >= 6 else ""
-        except Exception:
-            length_value = width_value = height_value = ""
 
     def go_to_window_6():
         """Transition to Window 6 with the collected data."""
@@ -175,18 +168,17 @@ def send_to_db_window(title="", description="", references=None, location="", si
         biblio_ref = [entry.get().strip() for entry in ref_entries if entry.get().strip()]
         location_val = location_entry.get().strip()
 
-        # Build the size string from the three entry fields
+        # Build the size dict from the three entry fields. Laplante here, this is now somewhat redundant, but I'll keep it nonetheless.
         length = length_entry.get().strip()
         width = width_entry.get().strip()
         height = height_entry.get().strip()
-        size_str = ""
+        size_dict = {"Height": "", "Width": "","Length": ""}
         if length:
-            size_str += f"Length: {length} "
+            size_dict["Length"] = length
         if width:
-            size_str += f"Width: {width} "
+            size_dict["Width"] = width
         if height:
-            size_str += f"Height: {height} "
-        size_str = size_str.strip()
+            size_dict["Height"] = height
 
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
@@ -205,16 +197,18 @@ def send_to_db_window(title="", description="", references=None, location="", si
 
         if is_valid:
             window_4.destroy()
-            final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_str, tags_val, window_4)
+            final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val, window_4, id_num)
 
     def upload_image():
         """Handle image upload."""
         if len(image_titles) < 5:
             file_path = filedialog.askopenfilename(title="Select an Image",
-                                                   filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+                                                   filetypes=[("JPEG Files", "*.jpg"), ("JPEG Files", "*.jpeg"),
+                                                              ("PNG Files", "*.png")], initialdir="/media/user")
             if file_path:
-                image_title = file_path.split('/')[-1]
-                image_titles.append(image_title)
+                # image_title = file_path.split('/')[-1] #The point of this is to display the filename to the users.
+                # That's great, but useless in the backend. I found where the image title is shown and just modified the text there.
+                image_titles.append(file_path)
                 update_image_titles()
                 update_upload_count()
         if len(image_titles) >= 5:
@@ -227,7 +221,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
         for image in image_titles:
             image_frame = tk.Frame(image_titles_frame, bg=config.BG_COLOR)
             image_frame.pack(anchor="w", pady=2)
-            title_label = tk.Label(image_frame, text=image, font=config.FONT, bg=config.BG_COLOR)
+            title_label = tk.Label(image_frame, text=image.split('/')[-1], font=config.FONT, bg=config.BG_COLOR)
             title_label.pack(side="left")
             remove_button = tk.Button(image_frame, text="X", font=config.FONT_BOLD, fg="white", bg=config.BUTTON_COLOR,
                                       command=lambda img=image: remove_image(img))
@@ -406,12 +400,12 @@ def send_to_db_window(title="", description="", references=None, location="", si
     size_label.pack(anchor="center")
     size_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
     size_frame.pack(anchor="center", pady=10)
-    length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    length_entry.pack(side="left", padx=5)
-    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    width_entry.pack(side="left", padx=5)
     height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     height_entry.pack(side="left", padx=5)
+    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    width_entry.pack(side="left", padx=5)
+    length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    length_entry.pack(side="left", padx=5)
     length_entry.insert(0, length_value)
     width_entry.insert(0, width_value)
     height_entry.insert(0, height_value)
@@ -457,7 +451,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     window_4.mainloop()
 
 
-def open_select_where_to_store_window(title="", description="", references=None, location="", size="", tags="", image_titles=None):
+def open_select_where_to_store_window(title="", description="", references=None, location="", size="", tags="", image_titles=None, id_num=None):
     """Open a window to select where to store the data."""
     select_window = tk.Tk()
     select_window.title("Select Folder to Store Data")
@@ -488,7 +482,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     folder_listbox.config(yscrollcommand=folder_scrollbar.set)
     def refresh_folder_list():
         folder_listbox.delete(0, "end")
-        folders = QR.get_folders()
+        folders = logic.get_folders()
         for folder in folders:
             folder_listbox.insert("end", folder)
     refresh_folder_list()
@@ -526,8 +520,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     def send_to_selected_folder():
         try:
             selected_folder = folder_listbox.get(folder_listbox.curselection())
-            print(f"Data will be sent to folder: {selected_folder}")
-            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles)
+            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num)
             select_window.destroy()
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
@@ -546,7 +539,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     select_window.mainloop()
 
 
-def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], location="", size="", tags=[]):
+def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], location="", size={}, tags=[]):
     """Creates Window 4: Display title, description, and image upload functionality."""
     window_4 = tk.Tk()
     window_4.title("4 Database - Insert Images")
@@ -561,17 +554,18 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
         biblio_ref_val = [entry.get().strip() for entry in ref_entries if entry.get().strip()]
         location_val = location_entry.get().strip()
         # Build the size string from the entry fields
-        length = length_entry.get().strip()
-        width = width_entry.get().strip()
         height = height_entry.get().strip()
-        size_str = ""
+        width = width_entry.get().strip()
+        length = length_entry.get().strip()
+        #laplante here, changing all string dimensions to a dictionary
+        size_dict = {"Height":"", "Width":"","Length":""}
         if length:
-            size_str += f"Length: {length} "
+            size_dict["Length"]=length
         if width:
-            size_str += f"Width: {width} "
+            size_dict["Width"]= width
         if height:
-            size_str += f"Height: {height} "
-        size_str = size_str.strip()
+            size_dict["Height"]=height
+
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
         is_valid = True
         if not title_val:
@@ -586,15 +580,16 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
             description_error.config(text="")
         if is_valid:
             window_4.destroy()
-            final_check_window(title_val, description_val, image_titles, biblio_ref_val, location_val, size_str, tags_val, window_4)
+            final_check_window(title_val, description_val, image_titles, biblio_ref_val, location_val, size_dict, tags_val, window_4)
     def upload_image():
         """Handle image upload."""
         if len(image_titles) < 5:
-            file_path = filedialog.askopenfilename(title="Select an Image",
-                                                   filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+            file_path = filedialog.askopenfilename(title="Select an Image", filetypes=[("JPEG Files", "*.jpg"), ("JPEG Files", "*.jpeg"),
+                                                ("PNG Files", "*.png")],initialdir="/media/user")
             if file_path:
-                image_title = file_path.split('/')[-1]
-                image_titles.append(image_title)
+                #image_title = file_path.split('/')[-1] #The point of this is to display the filename to the users.
+                #That's great, but useless in the backend. I found where the image title is shown and just modified the text there.
+                image_titles.append(file_path)
                 update_image_titles()
                 update_upload_count()
         if len(image_titles) >= 5:
@@ -606,7 +601,7 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
         for image in image_titles:
             image_frame = tk.Frame(image_titles_frame, bg=config.BG_COLOR)
             image_frame.pack(anchor="w", pady=2)
-            title_label = tk.Label(image_frame, text=image, font=config.FONT, bg=config.BG_COLOR)
+            title_label = tk.Label(image_frame, text=image.split('/')[-1], font=config.FONT, bg=config.BG_COLOR)#Added the split part to the text of this label
             title_label.pack(side="left")
             remove_button = tk.Button(image_frame, text="X", font=config.FONT_BOLD, fg="white", bg=config.BUTTON_COLOR,
                                       command=lambda img=image: remove_image(img))
@@ -756,12 +751,12 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     size_label.pack(anchor="center")
     size_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
     size_frame.pack(anchor="center", pady=10)
-    length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    length_entry.pack(side="left", padx=5)
-    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    width_entry.pack(side="left", padx=5)
     height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     height_entry.pack(side="left", padx=5)
+    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    width_entry.pack(side="left", padx=5)
+    length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    length_entry.pack(side="left", padx=5)
     size_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     size_error.pack(anchor="center")
     keyword_label = tk.Label(second_frame, text="Keywords/Tags:", font=config.FONT_BOLD, bg=config.BG_COLOR)
@@ -803,9 +798,138 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     window_4.mainloop()
 
 
-def send_to_database(folder, title="", description="", references=None, location="", size="", tags="", image_titles=None):
-    # TODO: Implement the actual database storage logic
-    print("Sent to database")
+#Warning, ye who dares venture below shall enter Laplante's battlefield
+def image_format(images, id_numb, folder):
+    """This function extracts image bytes from a filepath, and assigns it to a position in the list. If there is no image passed, the value of NULL is passed"""
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+    cursor = connection.cursor()
+
+    image_data = ["NULL"] * 5
+    if id_numb is not None:
+        for i in range(0,5):
+            try:
+                if images[i][0:8] != "Existing":
+                    tmp_img = decode_data(images[i])
+                    command = (f"UPDATE {folder} SET img_{i+1}=%s WHERE id_num=\'{id_numb}\';")
+                    cursor.execute(command,(tmp_img,))
+                    connection.commit()
+            except:
+                command = (f"UPDATE {folder} SET img_{i + 1}=\"NULL\" WHERE id_num=\'{id_numb}\';")
+                cursor.execute(command)
+                connection.commit()
+    else:
+        for i in range(len(images)):
+            image_data[i]=decode_data(images[i])
+
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+    return image_data
+
+def refs_format(refs):
+    """This function extracts the current references into a list of ten elements which include the references and NULLs"""
+    all_refs=["NULL"]*10
+    for i in range(len(refs)):
+        all_refs[i]=refs[i]
+
+    return all_refs
+
+def tag_format(tags):
+    """This function extracts the current tags into a list of fifteen elements which include the tags and NULLs"""
+    all_tags = ["NULL"] * 15
+    for i in range(len(tags)):
+        all_tags[i] = tags[i]
+
+    return all_tags
+
+def get_dims(dimensions):
+    """Extracting values from potentially non-existent fields in a dictionary"""
+    if dimensions['Length'] == "":
+        length = 0
+    else:
+        length = dimensions['Length']
+    if dimensions['Width'] == "":
+        width = 0
+    else:
+        width = dimensions['Width']
+    if dimensions['Height'] == "":
+        height = 0
+    else:
+        height = dimensions['Height']
+
+    return length, width, height
+
+def send_to_database(folder, title, description, references, location, size, tags, image_titles, id_numb):
+    #Laplante here, I need to use the og id_num value of an entry while modifying this allows staff to change the title
+    #of an entry should they wish to. id_numb is the og id, id_num is one generated for a new entry. As per Chan's design,
+    #we need to let staff know that they must never reuse a title... at least in the same folder.
+    images= image_format(image_titles, id_numb, folder)
+    refs = refs_format(references)
+    new_tags = tag_format(tags)
+    length, width, height = get_dims(size)
+
+    #Using prepared statements to handle escaping and insertion of binary data safely
+    # Prepare the SQL query with placeholders for the values
+    # Collect all the data into a tuple
+    if id_numb is not None:
+        query = (f"UPDATE {folder} SET title=%s, description=%s, location=%s, reference_1=%s, reference_2=%s, reference_3=%s, "
+                 f"reference_4=%s, reference_5=%s, reference_6=%s, reference_7=%s, reference_8=%s, reference_9=%s,"
+                 f" reference_10=%s, tag_1=%s, tag_2=%s, tag_3=%s, tag_4=%s, tag_5=%s, tag_6=%s, tag_7=%s, tag_8=%s,"
+                 f" tag_9=%s, tag_10=%s, tag_11=%s, tag_12=%s, tag_13=%s, tag_14=%s, tag_15=%s, length=%s, width=%s,"
+                 f" hight=%s WHERE id_num=%s;")
+        data = (title, description, location, refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7],
+                refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5],
+                new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
+                new_tags[13], new_tags[14], height, width, length, id_numb)
+    else:
+        # Creating the unique key by hashing the title and taking the first 10 characters
+        # I am assuming here that there can't be 2 entries with the same title
+        full_hash = hashlib.sha256(title.encode()).hexdigest()
+        id_num = full_hash[:10]
+        query = (f"INSERT INTO {folder} (title, description, id_num, img_1, img_2, img_3, img_4, img_5, location, "
+                 f"reference_1, reference_2, reference_3, reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
+                 f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, "
+                 f"length, width, hight) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                 f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
+        data = (title, description, id_num, images[0], images[1], images[2], images[3], images[4], location,
+                refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9],
+                new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5], new_tags[6], new_tags[7],
+                new_tags[8], new_tags[9],
+                new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14], height, width, length)
+
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+
+    cursor = connection.cursor()
+    #Execute with prepared statement
+    cursor.execute(query,data)
+    connection.commit()
+
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+
+"""
+Helper functions to add images
+"""
+
+def decode_data(filepath):
+    """This function extracts the raw image bytes from a file to store in the database"""
+    with open(filepath, "rb") as file:
+        binary_data=file.read()
+    return binary_data
+
 
 
 if __name__ == "__main__":

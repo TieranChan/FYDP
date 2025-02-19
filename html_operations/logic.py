@@ -5,11 +5,11 @@ from io import BytesIO
 import segno
 import webbrowser
 import sys
-sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
+#sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
 from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
-sys.path.append(r"C:\Users\Tiera\FYDP")
+#sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
 
 """
@@ -76,13 +76,14 @@ def get_folders():
             host="localhost",
             user=config.mysql_username,
             password=config.mysql_password,
-            database="museum"
+            database="museum_db",
+            use_pure=True
         )
         cursor = connection.cursor()
         cursor.execute("""
         SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.TABLES 
-        WHERE TABLE_SCHEMA = 'museum'
+        WHERE TABLE_SCHEMA = 'museum_db'
         """)
         return [row[0] for row in cursor.fetchall()]
     except mysql.connector.Error as err:
@@ -103,7 +104,8 @@ def get_titles_in_folder(folder):
             host="localhost",
             user=config.mysql_username,
             password=config.mysql_password,
-            database="museum"
+            database="museum_db",
+            use_pure=True
         )
         cursor = connection.cursor()
         cursor.execute(f"SELECT title FROM `{folder}`")
@@ -126,7 +128,8 @@ def fetch_data_for_title_dynamic(title):
             host="localhost",
             user=config.mysql_username,
             password=config.mysql_password,
-            database="museum"
+            database="museum_db",
+            use_pure=True
         )
         cursor = connection.cursor()
 
@@ -134,19 +137,17 @@ def fetch_data_for_title_dynamic(title):
         cursor.execute("""
         SELECT TABLE_NAME 
         FROM INFORMATION_SCHEMA.COLUMNS 
-        WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
+        WHERE TABLE_SCHEMA = 'museum_db' AND COLUMN_NAME = 'title'
         """)
         tables = [row[0] for row in cursor.fetchall()]
 
         # Search for the title in each table
         for table in tables:
             query = f"""
-            SELECT title, description, 
-                   img_1, img_2, img_3, img_4, img_5, 
-                   reference_1, reference_2, reference_3, reference_4, reference_6, reference_7, reference_8, reference_9, reference_10,
-                   location, 
-                   hight, width, length, 
-                   tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
+            SELECT title, description, id_num, img_1, img_2, img_3, img_4, img_5, reference_1, reference_2, reference_3, 
+                   reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10,
+                   location, hight, width, length, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, 
+                   tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
             FROM `{table}`
             WHERE title = %s
             """
@@ -155,9 +156,9 @@ def fetch_data_for_title_dynamic(title):
             if result:
                 # Build a detailed dictionary of the result
                 columns = [
-                    "title", "description",
+                    "title", "description", "id_num",
                     "img_1", "img_2", "img_3", "img_4", "img_5",
-                    "reference_1", "reference_2", "reference_3", "reference_4", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
+                    "reference_1", "reference_2", "reference_3", "reference_4", "reference_5", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
                     "location",
                     "hight", "width", "length",
                     "tag_1", "tag_2", "tag_3", "tag_4", "tag_5", "tag_6", "tag_7", "tag_8", "tag_9", "tag_10",
@@ -184,7 +185,8 @@ Fetches all titles dynamically from all tables with a 'title' column NOT CURRENT
 #             host="localhost",
 #             user=config.mysql_username,
 #             password=config.mysql_password,
-#             database="museum"
+#             database="museum_db",
+#             use_pure=True
 #         )
 #         cursor = connection.cursor()
 
@@ -192,7 +194,7 @@ Fetches all titles dynamically from all tables with a 'title' column NOT CURRENT
 #         cursor.execute("""
 #         SELECT TABLE_NAME 
 #         FROM INFORMATION_SCHEMA.COLUMNS 
-#         WHERE TABLE_SCHEMA = 'museum' AND COLUMN_NAME = 'title'
+#         WHERE TABLE_SCHEMA = 'museum_db' AND COLUMN_NAME = 'title'
 #         """)
 #         tables = [row[0] for row in cursor.fetchall()]
 

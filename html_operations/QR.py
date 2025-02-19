@@ -5,24 +5,24 @@ from io import BytesIO
 import segno
 import webbrowser
 import sys
-sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
+#sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
 
-#from database_operations import Database
-#from database_operations.Database_existing import Database_existing
+from database_operations import Database
+#from database_operations import Database_existing
 import importlib.util
 import sys
-sys.path.append(r"C:\Users\Tiera\FYDP")
+#sys.path.append(r"C:\Users\Tiera\FYDP")
 
-spec = importlib.util.spec_from_file_location("Database_existing", r"C:\Users\Tiera\FYDP\database_operations\Database_existing.py")
+spec = importlib.util.spec_from_file_location("Database_existing", r"/home/user/GetHub/UnitTest_V2/FYDP/database_operations/Database_existing.py")
 Database_existing = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(Database_existing)
 import mysql.connector
 from tkinter import messagebox
-sys.path.append(r"C:\Users\Tiera\FYDP")
+#sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
 
 
-from logic import *
+from html_operations import logic
 
 
 def on_closing():
@@ -33,7 +33,7 @@ def on_closing():
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
    
-    description,location, size, image_titles, biblio_ref, tags, size_components=extract_fields(data)
+    description,location, size, image_titles, biblio_ref, tags, size_components=logic.extract_fields(data)
     html_sections = []
 
     # Add sections conditionally
@@ -331,7 +331,7 @@ def open_qr_code_window(title, html_path):
     back_button.pack(pady=10)
 
 
-def confirm_delete(title, parent_window):
+def confirm_delete(table, title, parent_window):
     """Display a confirmation popup for deleting an entry."""
     confirm_window = Toplevel()
     confirm_window.title("Confirm Delete")
@@ -360,7 +360,7 @@ def confirm_delete(title, parent_window):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (delete_entry(title), confirm_window.destroy(), parent_window.destroy(), open_select_window())  # Close both windows
+        command=lambda: (delete_entry(table, title), confirm_window.destroy(), parent_window.destroy(), open_select_window())  # Close both windows
     ).pack(side="left", padx=20, pady=10)
 
     # No button - Closes the confirmation window
@@ -442,7 +442,7 @@ def open_select_window():
     title_listbox.config(yscrollcommand=title_scrollbar.set)
 
     # Populate folder listbox with folder names
-    folders = get_folders()  # Fetch all folder (table) names dynamically
+    folders = logic.get_folders()  # Fetch all folder (table) names dynamically
     for folder in folders:
         folder_listbox.insert("end", folder)
 
@@ -457,7 +457,7 @@ def open_select_window():
             selected_folder = folder_listbox.get(folder_listbox.curselection())
 
             # Fetch titles from the selected folder
-            titles = get_titles_in_folder(selected_folder)
+            titles = logic.get_titles_in_folder(selected_folder)
 
             # Clear the title listbox
             title_listbox.delete(0, "end")
@@ -483,7 +483,7 @@ def open_select_window():
             selected_title = title_listbox.get(title_listbox.curselection())
 
             # Fetch data for the selected title
-            data, table = fetch_data_for_title_dynamic(selected_title)
+            data, table = logic.fetch_data_for_title_dynamic(selected_title)
 
             if data:
                 root.withdraw()
@@ -584,14 +584,18 @@ def open_what_to_do(data, title):
 
 def open_modify_delete_window(title):
     """Open a window for modifying or deleting the selected entry."""
-    data, table = fetch_data_for_title_dynamic(title)
+    data, table = logic.fetch_data_for_title_dynamic(title)
     description = data.get("description") if data else ""  # Default to an empty string if no description
+    # Laplante here, adding images into information sent to modification and passing the hashed id number.
+    # No hash= brand new entry. The hash is what I use to tell SQL which entry to update.
+    images = [f"Existing Image {i}" for i in range(1, 6)
+              if data.get(f"img_{i}") != b'NULL']
+    id_num = data.get("id_num")
     references = [
         data.get(f"reference_{i}") for i in range(1, 11)
         if data and data.get(f"reference_{i}")  # Only include non-empty references
     ]
     location = data.get("location") if data else ""
-
 
     # Extract size components
     length = data.get("length", "")  # Use the database column names
@@ -599,8 +603,7 @@ def open_modify_delete_window(title):
     height = data.get("hight", "")  # Assuming "hight" is the column name
 
     # Format size as a dictionary
-    size = {"length": length, "width": width, "height": height}
-
+    size = {"Length": length, "Width": width, "Height": height}
     # Extract tags
     tags = [
         data.get(f"tag_{i}") for i in range(1, 16)
@@ -635,7 +638,7 @@ def open_modify_delete_window(title):
         padx=10,
         pady=5,
         command=lambda: [
-            Database_existing.send_to_db_window(title, description, references, location, size, tags),
+            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num), #Laplante changed this to just database
             modify_delete_window.destroy(),
         ]  # Pass title, description, and references
     ).pack(pady=10)
@@ -651,7 +654,7 @@ def open_modify_delete_window(title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (confirm_delete(title, modify_delete_window), modify_delete_window.destroy())
+        command=lambda: (confirm_delete(table, title, modify_delete_window), modify_delete_window.destroy())
     ).pack(pady=10)
 
     # Back button
@@ -756,7 +759,7 @@ def mysql_login_window():
         config.mysql_username = username_entry.get()
         config.mysql_password = password_entry.get()
 
-        result=validate_and_connect(config.mysql_username, config.mysql_password)
+        result=logic.validate_and_connect(config.mysql_username, config.mysql_password)
 
         if result == "Success":
             messagebox.showinfo("Login Successful", "You are logged in!")
@@ -864,18 +867,48 @@ def open_main_menu_window():
 
     main_menu_window.mainloop()
 
-
-def delete_entry(title):
+def delete_entry(table, title_to_del):
     """Delete the entry from the database or file system."""
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
 
-    print(f"Entry '{title}' deleted.")  # Log the action for debugging
-
+    query = (f"DELETE FROM {table} WHERE title=%s;")
+    cursor = connection.cursor()
+    cursor.execute(query, (title_to_del,))
+    connection.commit()
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
 
 def create_folder(folder_name):
-    print(f"I created a folder with name: {folder_name}")
-    #todo
-    #create said folder in MySQL
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
 
+    command = (
+        f"create table {folder_name} (title VARCHAR(75),description VARCHAR(3000),id_num VARCHAR(10),img_1 MEDIUMBLOB,"
+        f"img_2 MEDIUMBLOB,img_3 MEDIUMBLOB,img_4 MEDIUMBLOB,img_5 MEDIUMBLOB,location VARCHAR(75),reference_1 VARCHAR(75),"
+        f"reference_2 VARCHAR(75),reference_3 VARCHAR(75),reference_4 VARCHAR(75),reference_5 VARCHAR(75),reference_6 VARCHAR(75),"
+        f"reference_7 VARCHAR(75),reference_8 VARCHAR(75),reference_9 VARCHAR(75),reference_10 VARCHAR(75),tag_1 VARCHAR(20),"
+        f"tag_2 VARCHAR(20),tag_3 VARCHAR(20),tag_4 VARCHAR(20),tag_5 VARCHAR(20),tag_6 VARCHAR(20),tag_7 VARCHAR(20),"
+        f"tag_8 VARCHAR(20),tag_9 VARCHAR(20),tag_10 VARCHAR(20),tag_11 VARCHAR(20),tag_12 VARCHAR(20),tag_13 VARCHAR(20),"
+        f"tag_14 VARCHAR(20),tag_15 VARCHAR(20),hight VARCHAR(8),width VARCHAR(8),length VARCHAR(8));")
+
+    cursor = connection.cursor()
+    cursor.execute(command)
+    connection.commit()
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
 
 if __name__ == "__main__":
     mysql_login_window()  # Prompt for MySQL credentials
