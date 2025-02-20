@@ -5,11 +5,12 @@ from io import BytesIO
 import segno
 import webbrowser
 import sys
-#sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
+sys.path.append(r"C:\Users\Tiera\FYDP")
+sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
 from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
-#sys.path.append(r"C:\Users\Tiera\FYDP")
+
 import config
 
 """
