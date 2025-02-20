@@ -175,6 +175,71 @@ def fetch_data_for_title_dynamic(title):
             cursor.close()
             connection.close()
 
+def delete_entry(table, title_to_del):
+    """Delete the entry from the database or file system."""
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+
+    query = (f"DELETE FROM {table} WHERE title=%s;")
+    cursor = connection.cursor()
+    cursor.execute(query, (title_to_del,))
+    connection.commit()
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+
+def create_folder(folder_name):
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+
+    command = (
+        f"create table {folder_name} (title VARCHAR(75),description VARCHAR(3000),id_num VARCHAR(10),img_1 MEDIUMBLOB,"
+        f"img_2 MEDIUMBLOB,img_3 MEDIUMBLOB,img_4 MEDIUMBLOB,img_5 MEDIUMBLOB,location VARCHAR(75),reference_1 VARCHAR(75),"
+        f"reference_2 VARCHAR(75),reference_3 VARCHAR(75),reference_4 VARCHAR(75),reference_5 VARCHAR(75),reference_6 VARCHAR(75),"
+        f"reference_7 VARCHAR(75),reference_8 VARCHAR(75),reference_9 VARCHAR(75),reference_10 VARCHAR(75),tag_1 VARCHAR(20),"
+        f"tag_2 VARCHAR(20),tag_3 VARCHAR(20),tag_4 VARCHAR(20),tag_5 VARCHAR(20),tag_6 VARCHAR(20),tag_7 VARCHAR(20),"
+        f"tag_8 VARCHAR(20),tag_9 VARCHAR(20),tag_10 VARCHAR(20),tag_11 VARCHAR(20),tag_12 VARCHAR(20),tag_13 VARCHAR(20),"
+        f"tag_14 VARCHAR(20),tag_15 VARCHAR(20),hight VARCHAR(8),width VARCHAR(8),length VARCHAR(8));")
+
+    cursor = connection.cursor()
+    cursor.execute(command)
+    connection.commit()
+    if connection.is_connected():
+        cursor.close()
+        connection.close()
+
+
+def generate_qr(data):
+    """Generate a QR code and return it as a PhotoImage."""
+    qr = segno.make(data)  # Create QR code
+    buffer = BytesIO()
+    qr.save(buffer, kind='png', scale=10)  # Generate high-quality QR code
+    buffer.seek(0)
+    image = Image.open(buffer)
+    image = image.resize((200, 200), Image.Resampling.LANCZOS)  # Resize for display
+    return ImageTk.PhotoImage(image)
+
+
+def save_qr_to_file(data):
+    """Prompt the user to save the QR code as a .png file."""
+    qr = segno.make(data)  # Generate QR code
+    file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")], title="Save QR Code")
+    if file_path:
+        qr.save(file_path, kind='png', scale=10)
+        qr.save(file_path, kind='png', scale=10)
+        print(f"QR Code saved to {file_path}")
+
+
 """
 Fetches all titles dynamically from all tables with a 'title' column NOT CURRENTLY BEING USED!1
 """

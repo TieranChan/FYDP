@@ -200,26 +200,6 @@ def generate_html_page(data, title):
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
 
-def generate_qr(data):
-    """Generate a QR code and return it as a PhotoImage."""
-    qr = segno.make(data)  # Create QR code
-    buffer = BytesIO()
-    qr.save(buffer, kind='png', scale=10)  # Generate high-quality QR code
-    buffer.seek(0)
-    image = Image.open(buffer)
-    image = image.resize((200, 200), Image.Resampling.LANCZOS)  # Resize for display
-    return ImageTk.PhotoImage(image)
-
-
-def save_qr_to_file(data):
-    """Prompt the user to save the QR code as a .png file."""
-    qr = segno.make(data)  # Generate QR code
-    file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG files", "*.png")], title="Save QR Code")
-    if file_path:
-        qr.save(file_path, kind='png', scale=10)
-        qr.save(file_path, kind='png', scale=10)
-        print(f"QR Code saved to {file_path}")
-
 
 def open_save_html(data, title):
     """Open a window to prompt the user to save the HTML file."""
@@ -265,8 +245,6 @@ def open_save_html(data, title):
         )
     )
     back_button.pack(pady=10)
-
-
 
 def open_options_window(title, html_path):
     """Open a window with options after saving the HTML file."""
@@ -342,7 +320,7 @@ def open_qr_code_window(title, html_path):
     ).pack(pady=10)
 
     # Generate and display the QR code
-    qr_image = generate_qr(html_path)  # Generate QR code for the HTML path
+    qr_image = logic.generate_qr(html_path)  # Generate QR code for the HTML path
     qr_label = tk.Label(qr_window, image=qr_image, bg=config.BG_COLOR)
     qr_label.image = qr_image  # Keep a reference to avoid garbage collection
     qr_label.pack(pady=20)
@@ -358,7 +336,7 @@ def open_qr_code_window(title, html_path):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: save_qr_to_file(html_path)
+        command=lambda: logic.save_qr_to_file(html_path)
     ).pack(pady=10)
 
     # Print button (placeholder for actual print functionality)
@@ -419,7 +397,7 @@ def confirm_delete(table, title, parent_window):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (delete_entry(table, title), confirm_window.destroy(), parent_window.destroy(), open_select_window())  # Close both windows
+        command=lambda: (logic.delete_entry(table, title), confirm_window.destroy(), parent_window.destroy(), open_select_window())  # Close both windows
     ).pack(side="left", padx=20, pady=10)
 
     # No button - Closes the confirmation window
@@ -923,51 +901,7 @@ def open_main_menu_window():
         pady=5,
         command=access_existing_entry
     ).pack(pady=20)
-
     main_menu_window.mainloop()
-
-def delete_entry(table, title_to_del):
-    """Delete the entry from the database or file system."""
-    connection = mysql.connector.connect(
-        host="localhost",
-        user=config.mysql_username,
-        password=config.mysql_password,
-        database="museum_db",
-        use_pure=True
-    )
-
-    query = (f"DELETE FROM {table} WHERE title=%s;")
-    cursor = connection.cursor()
-    cursor.execute(query, (title_to_del,))
-    connection.commit()
-    if connection.is_connected():
-        cursor.close()
-        connection.close()
-
-def create_folder(folder_name):
-    connection = mysql.connector.connect(
-        host="localhost",
-        user=config.mysql_username,
-        password=config.mysql_password,
-        database="museum_db",
-        use_pure=True
-    )
-
-    command = (
-        f"create table {folder_name} (title VARCHAR(75),description VARCHAR(3000),id_num VARCHAR(10),img_1 MEDIUMBLOB,"
-        f"img_2 MEDIUMBLOB,img_3 MEDIUMBLOB,img_4 MEDIUMBLOB,img_5 MEDIUMBLOB,location VARCHAR(75),reference_1 VARCHAR(75),"
-        f"reference_2 VARCHAR(75),reference_3 VARCHAR(75),reference_4 VARCHAR(75),reference_5 VARCHAR(75),reference_6 VARCHAR(75),"
-        f"reference_7 VARCHAR(75),reference_8 VARCHAR(75),reference_9 VARCHAR(75),reference_10 VARCHAR(75),tag_1 VARCHAR(20),"
-        f"tag_2 VARCHAR(20),tag_3 VARCHAR(20),tag_4 VARCHAR(20),tag_5 VARCHAR(20),tag_6 VARCHAR(20),tag_7 VARCHAR(20),"
-        f"tag_8 VARCHAR(20),tag_9 VARCHAR(20),tag_10 VARCHAR(20),tag_11 VARCHAR(20),tag_12 VARCHAR(20),tag_13 VARCHAR(20),"
-        f"tag_14 VARCHAR(20),tag_15 VARCHAR(20),hight VARCHAR(8),width VARCHAR(8),length VARCHAR(8));")
-
-    cursor = connection.cursor()
-    cursor.execute(command)
-    connection.commit()
-    if connection.is_connected():
-        cursor.close()
-        connection.close()
 
 if __name__ == "__main__":
     #mysql_login_window()  # Prompt for MySQL credentials
