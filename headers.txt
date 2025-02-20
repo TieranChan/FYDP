@@ -38,3 +38,40 @@ from tkinter import messagebox
 #sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
 from html_operations import logic
+
+#Headers for Chan
+QR.py
+from PIL import Image, ImageTk
+from io import BytesIO
+import segno
+import webbrowser
+import sys
+import importlib.util
+spec = importlib.util.spec_from_file_location("Database", r"C:\Users\Tiera\FYDP\database_operations\Database.py")
+Database = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(Database)
+from database_operations import Database
+import sys
+import mysql.connector
+from tkinter import messagebox
+import config
+from html_operations import logic
+import base64
+#Database.py
+import tkinter as tk
+from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas, messagebox
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
+from database_logic import *
+import config
+from html_operations import QR, logic
+#Database_logic.py
+import mysql.connector
+import hashlib
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
+import config
+
+#Headers for Prod

@@ -1,13 +1,16 @@
 import tkinter as tk
-from tkinter import filedialog, Toplevel, Scrollbar, Listbox
 from PIL import Image, ImageTk
 from io import BytesIO
 import segno
 import webbrowser
 import sys
-from database_operations import Database
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 import importlib.util
-import sys
+spec = importlib.util.spec_from_file_location("Database", r"C:\Users\Tiera\FYDP\database_operations\Database.py")
+Database = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(Database)
+from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
 import config

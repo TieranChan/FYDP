@@ -1,5 +1,8 @@
 import mysql.connector
 import hashlib
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 import config
 
 def parse_size_to_dict(size_str):

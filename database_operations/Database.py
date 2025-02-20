@@ -5,7 +5,11 @@
 
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas, messagebox
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
 from database_operations.database_logic import *
+#from database_logic import *
 import config
 from html_operations import QR, logic
 
