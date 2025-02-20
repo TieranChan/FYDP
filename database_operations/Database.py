@@ -34,6 +34,10 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     second_frame = Frame(my_canvas, bg=config.BG_COLOR)
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
 
+    # Helper function: returns True only if value is not empty and not "NULL"
+    def is_valid(value):
+        return value is not None and str(value).strip() != "" and str(value).strip().upper() != "NULL"
+
     # Helper to create centered labels
     def create_centered_label(text, font=config.FONT, bold=False, fg=config.TEXT_COLOR, bg=config.BG_COLOR):
         label_font = (font[0], font[1], "bold") if bold else font
@@ -41,64 +45,72 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         label.pack(pady=10, anchor="center")
         return label
 
-    # Display title and description
+    # Display title (assumed to be always valid)
     create_centered_label("The title is:", font=config.FONT_BOLD, fg=config.TEXT_COLOR)
     create_centered_label(title, font=config.FONT)
 
-    create_centered_label("The description is:", font=config.FONT_BOLD)
-    description_box = scrolledtext.ScrolledText(
-        second_frame,
-        wrap=tk.WORD,
-        width=80,
-        height=10,
-        font=config.FONT,
-    )
-    description_box.insert(tk.END, description)
-    description_box.configure(state="disabled")
-    description_box.pack(pady=10, padx=20)
+    # Display description if valid; otherwise, show a message indicating no description
+    if is_valid(description):
+        create_centered_label("The description is:", font=config.FONT_BOLD)
+        description_box = scrolledtext.ScrolledText(
+            second_frame,
+            wrap=tk.WORD,
+            width=80,
+            height=10,
+            font=config.FONT,
+        )
+        description_box.insert(tk.END, description)
+        description_box.configure(state="disabled")
+        description_box.pack(pady=10, padx=20)
+    else:
+        create_centered_label("No description provided", font=config.FONT_BOLD, fg="red")
 
-    # Display image titles if any
-    if image_titles:
+    # Display image titles if any valid images are passed
+    valid_images = [img for img in image_titles if is_valid(img)]
+    if valid_images:
         create_centered_label("The image titles are:", font=config.FONT_BOLD)
         images_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
         images_frame.pack(pady=10)
-        for image in image_titles:
-            create_centered_label(image.split('/')[-1], font=config.FONT) #Laplante changing this to still keep full file pathes, but only show file name
+        for image in valid_images:
+            # Show only the filename portion
+            create_centered_label(image.split('/')[-1], font=config.FONT)
     else:
         create_centered_label("No images were sent", font=config.FONT_BOLD, fg="red")
 
-    # Display bibliographic references
-    if biblio_ref:
+    # Display bibliographic references if any valid ones exist
+    valid_refs = [ref for ref in biblio_ref if is_valid(ref)]
+    if valid_refs:
         create_centered_label("Bibliographic References:", font=config.FONT_BOLD)
         biblio_tree = ttk.Treeview(second_frame, columns=("Reference"), show="headings", height=5)
         biblio_tree.heading("Reference", text="Reference")
         biblio_tree.pack(pady=10)
-        for ref in biblio_ref:
+        for ref in valid_refs:
             biblio_tree.insert("", "end", values=(ref,))
     else:
         create_centered_label("No bibliographic references were sent", font=config.FONT_BOLD, fg="red")
 
-    # Display location
-    if location:
+    # Display location if valid
+    if is_valid(location):
         create_centered_label("Location:", font=config.FONT_BOLD)
         create_centered_label(location, font=config.FONT)
     else:
         create_centered_label("No location was provided", font=config.FONT_BOLD, fg="red")
 
-    # Display size as a string (instead of a dictionary)
-    if size:
+    # Display size if at least one of its components is valid
+    if size and (is_valid(size.get("Length", "")) or is_valid(size.get("Width", "")) or is_valid(size.get("Height", ""))):
         create_centered_label("Size:", font=config.FONT_BOLD)
-        size_str = f"Length: {size['Length']} Width: {size['Width']} Height: {size['Height']}" #Laplante importing this from his solution
+        size_str = f"Length: {size['Length']} Width: {size['Width']} Height: {size['Height']}"
         create_centered_label(size_str, font=config.FONT)
     else:
         create_centered_label("No sizes were given", font=config.FONT_BOLD, fg="red")
 
-    # Display tags
-    if tags:
+    # Display tags if any valid tags exist
+    valid_tags = [tag for tag in tags if is_valid(tag)]
+    if valid_tags:
         create_centered_label("Tags:", font=config.FONT_BOLD)
         tags_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
         tags_frame.pack(pady=1)
-        for tag in tags:
+        for tag in valid_tags:
             create_centered_label(tag, font=config.FONT)
     else:
         create_centered_label("No tags were provided", font=config.FONT_BOLD, fg="red")
@@ -160,6 +172,17 @@ def send_to_db_window(title="", description="", references=None, location="", si
     width_value = size['Width']
     height_value = size['Height']
 
+    def clean_field(value):
+        """Return an empty string if value is None or 'NULL' (ignoring case), otherwise return the trimmed value."""
+        if value is None or str(value).strip().upper() == "NULL":
+            return ""
+        return str(value).strip()
+
+    def clean_size(value):
+        """Return an empty string if the size value is 0, None, or 'NULL'; otherwise return the trimmed value."""
+        if value in (0, "0", None) or str(value).strip().upper() == "NULL":
+            return ""
+        return str(value).strip()
 
     def go_to_window_6():
         """Transition to Window 6 with the collected data."""
@@ -329,7 +352,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     title_label = tk.Label(title_frame, text="Title:", font=config.FONT_BOLD, bg=config.BG_COLOR)
     title_label.pack(side="left")
     title_text = tk.Text(title_frame, wrap=tk.WORD, width=40, height=1, font=config.FONT_TEXT, fg="black", bg=config.ENTRY_COLOR)
-    title_text.insert(tk.END, title)
+    title_text.insert(tk.END, clean_field(title))
     title_text.pack(side="left")
     title_char_count_label = tk.Label(title_frame, text="0/75", font=config.FONT_TEXT, bg=config.BG_COLOR)
     title_char_count_label.pack(side="left")
@@ -344,7 +367,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     description_text = scrolledtext.ScrolledText(second_frame, wrap=tk.WORD, width=60, height=6, font=config.FONT_TEXT, bg=config.ENTRY_COLOR)
     char_count_label = tk.Label(description_frame, text="0/3000", font=config.FONT_TEXT, bg=config.BG_COLOR)
     char_count_label.pack(side="left")
-    description_text.insert(tk.END, description)
+    description_text.insert(tk.END, clean_field(description))
     description_text.pack(anchor="center", fill="x", padx=20, pady=2)
     description_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     description_error.pack(anchor="center")
@@ -373,7 +396,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
         ref_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
         ref_frame.pack(anchor="center")
         ref_entry = tk.Entry(ref_frame, font=config.FONT_TEXT, width=60, bg=config.ENTRY_COLOR)
-        ref_entry.insert(tk.END, references[i] if i < len(references) else "")
+        ref_entry.insert(tk.END, clean_field(references[i]) if i < len(references) else "")
         ref_entry.pack(side="left")
         ref_entries.append(ref_entry)
         ref_count_label = tk.Label(ref_frame, text="0/75", font=config.FONT_TEXT, bg=config.BG_COLOR)
@@ -388,7 +411,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     location_label = tk.Label(location_frame, text="Location:", font=config.FONT_BOLD, bg=config.BG_COLOR)
     location_label.pack(side="left")
     location_entry = tk.Entry(location_frame, width=40, font=config.FONT_TEXT, bg=config.ENTRY_COLOR)
-    location_entry.insert(tk.END, location)
+    location_entry.insert(tk.END, clean_field(location))
     location_entry.pack(side="left")
     location_char_count_label = tk.Label(location_frame, text="0/75", font=config.FONT_TEXT, bg=config.BG_COLOR)
     location_char_count_label.pack(side="left")
@@ -406,9 +429,9 @@ def send_to_db_window(title="", description="", references=None, location="", si
     width_entry.pack(side="left", padx=5)
     length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     length_entry.pack(side="left", padx=5)
-    length_entry.insert(0, length_value)
-    width_entry.insert(0, width_value)
-    height_entry.insert(0, height_value)
+    length_entry.insert(0, clean_size(size.get('Length', 0)))
+    width_entry.insert(0, clean_size(size.get('Width', 0)))
+    height_entry.insert(0, clean_size(size.get('Height', 0)))
     size_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     size_error.pack(anchor="center")
 
@@ -423,7 +446,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
             keyword_row_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
             keyword_row_frame.pack(anchor="center", pady=2)
         keyword_entry = tk.Entry(keyword_row_frame, font=config.FONT_TEXT, width=20, bg=config.ENTRY_COLOR)
-        keyword_entry.insert(tk.END, tag)
+        keyword_entry.insert(tk.END, clean_field(tag))
         keyword_entry.grid(row=row, column=col * 2, padx=5, pady=5)
         keyword_count_label = tk.Label(keyword_row_frame, text="0/20", font=config.FONT_TEXT, bg=config.BG_COLOR)
         keyword_count_label.grid(row=row, column=(col * 2) + 1, padx=5)
@@ -804,6 +827,20 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     send_button.pack(anchor="center")
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=config.BG_COLOR)
     space_label.pack(anchor="center")
+
+    # Back button
+    back_button = tk.Button(
+        second_frame,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            modification_abort_new(window_4)
+        )
+    )
+    back_button.pack(pady=10)
+
     update_character_count()
     update_image_titles()
     update_upload_count()
@@ -1014,6 +1051,75 @@ def modification_abort(window_4, title):
             abort_window.destroy(),
             window_4.destroy(),
             QR.open_modify_delete_window(title)
+        )
+    ).pack(side="right", padx=20, pady=10)
+
+    abort_window.mainloop()
+
+
+def modification_abort_new(window_4):
+    """Display a modal abort window that prevents interaction with window_4.
+    When the user clicks (attempting to interact with the background), the window border flashes red.
+    """
+    # Create the abort window as a child of window_4
+    abort_window = tk.Toplevel(window_4)
+    abort_window.transient(window_4)
+    abort_window.grab_set()  # Make the window modal
+    abort_window.title("Confirm Modification Abort")
+
+    # Create a frame with a highlight border inside the abort window.
+    border_frame = tk.Frame(abort_window, bg=config.BG_COLOR,
+                            highlightthickness=2, highlightbackground=config.BG_COLOR)
+    border_frame.pack(fill="both", expand=True)
+
+    # Function to flash the border red when a click is detected.
+    def on_click(event):
+        border_frame.config(highlightbackground="red")
+        # After 500 ms, reset the border to its original color.
+        abort_window.after(500, lambda: border_frame.config(highlightbackground=config.BG_COLOR))
+
+    # Bind any left-click in the abort window to on_click.
+    abort_window.bind("<Button-1>", on_click)
+
+    # Place your message and buttons inside the border_frame.
+    tk.Label(
+        border_frame,
+        text="You have unsaved changes. Do you want to continue modifying or go back without saving?",
+        font=config.FONT,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR,
+        wraplength=280,  # Ensure text wraps nicely
+    ).pack(pady=10)
+
+    # Yes button - continue modifying.
+    tk.Button(
+        border_frame,
+        text="Keep modifying",
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
+        fg="white",
+        activebackground=config.TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: abort_window.destroy()
+    ).pack(side="left", padx=20, pady=10)
+
+    # Cancel button - abort modifications and go back.
+    tk.Button(
+        border_frame,
+        text="Go back without saving",
+        font=config.FONT_BOLD,
+        bg="red",
+        fg="white",
+        activebackground="#D32F2F",
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: (
+            abort_window.destroy(),
+            window_4.destroy(),
+            QR.open_main_menu_window()
         )
     ).pack(side="right", padx=20, pady=10)
 

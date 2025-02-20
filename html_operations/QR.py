@@ -23,13 +23,37 @@ def on_closing():
     sys.exit()  # Forcefully exits the program
 
 
+def is_valid_image(image_bytes):
+    """Return True if image_bytes can be opened as an image, False otherwise."""
+    try:
+        with Image.open(BytesIO(image_bytes)) as img:
+            img.verify()  # Verify the image can be opened without error
+        return True
+    except Exception:
+        return False
+
+
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
 
     description, location, size, image_titles, biblio_ref, tags, size_components = logic.extract_fields(data)
+
+    # Filter out fields that are the literal string "NULL"
+    description = description.strip() if description and description.strip().upper() != "NULL" else ""
+    location = location.strip() if location and location.strip().upper() != "NULL" else ""
+    size = size.strip() if size and size.strip().upper() != "NULL" else ""
+    valid_biblio = [ref for ref in biblio_ref if ref.strip().upper() != "NULL"]
+    valid_tags = [tag for tag in tags if tag.strip().upper() != "NULL"]
+
+    # Filter valid images: only include images that are bytes, non-empty, and verifiable.
+    valid_images = []
+    if image_titles:
+        for img in image_titles:
+            if isinstance(img, bytes) and len(img) > 0 and is_valid_image(img):
+                valid_images.append(img)
+
     html_sections = []
 
-    # Add sections conditionally
     if description:
         html_sections.append(f"""
         <div class="section">
@@ -38,11 +62,11 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    if image_titles:
-        # Convert each image bytes into a base64-encoded data URI and embed it in an <img> tag.
+    if valid_images:
+        # Convert each valid image to a base64 data URI and embed it in an <img> tag.
         images_html = ''.join(
             f'<div class="image"><img src="data:image/jpeg;base64,{base64.b64encode(img).decode("utf-8")}" alt="Image" /></div>'
-            for img in image_titles
+            for img in valid_images
         )
         html_sections.append(f"""
         <div class="section">
@@ -51,8 +75,8 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    if biblio_ref:
-        biblio_html = ''.join(f'<li>{ref}</li>' for ref in biblio_ref)
+    if valid_biblio:
+        biblio_html = ''.join(f'<li>{ref}</li>' for ref in valid_biblio)
         html_sections.append(f"""
         <div class="section">
             <h2>Bibliographic References</h2>
@@ -72,7 +96,15 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    if size:
+    def size_is_nonzero(size_str):
+        # Try to extract digits from a string like "Length: 0 Width: 0 Height: 0"
+        import re
+        numbers = re.findall(r'\d+', size_str)
+        # Return True if at least one number is nonzero
+        return any(int(n) != 0 for n in numbers)
+
+    # Then in your generate_html_page:
+    if size and size.strip().upper() != "NULL" and size_is_nonzero(size):
         html_sections.append(f"""
         <div class="section">
             <h2>Size</h2>
@@ -80,8 +112,8 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    if tags:
-        tags_html = ', '.join(tags)
+    if valid_tags:
+        tags_html = ', '.join(valid_tags)
         html_sections.append(f"""
         <div class="section">
             <h2>Tags</h2>
@@ -131,8 +163,10 @@ def generate_html_page(data, title):
                 text-align: left;
             }}
             .image img {{
-                max-height: 100vh;    /* Fit vertically within the viewport */
+                max-width: 100vw;   /* Fit within the viewport width */
+                max-height: 100vh;  /* Fit within the viewport height */
                 width: auto;
+                height: auto;
                 object-fit: contain;
                 border-radius: 5px;
             }}
@@ -165,7 +199,6 @@ def generate_html_page(data, title):
             file.write(html_content)
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
-
 
 def generate_qr(data):
     """Generate a QR code and return it as a PhotoImage."""
