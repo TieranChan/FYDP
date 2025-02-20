@@ -5,17 +5,17 @@ from io import BytesIO
 import segno
 import webbrowser
 import sys
-
 from database_operations import Database
 import importlib.util
 import sys
-
 import mysql.connector
 from tkinter import messagebox
 import config
-
-
 from html_operations import logic
+
+
+
+import base64
 
 
 def on_closing():
@@ -39,7 +39,11 @@ def generate_html_page(data, title):
         """)
 
     if image_titles:
-        images_html = ''.join(f'<div class="image"><p>{img}</p></div>' for img in image_titles)
+        # Convert each image bytes into a base64-encoded data URI and embed it in an <img> tag.
+        images_html = ''.join(
+            f'<div class="image"><img src="data:image/jpeg;base64,{base64.b64encode(img).decode("utf-8")}" alt="Image" /></div>'
+            for img in image_titles
+        )
         html_sections.append(f"""
         <div class="section">
             <h2>Images</h2>
@@ -124,6 +128,13 @@ def generate_html_page(data, title):
                 padding: 5px;
                 border: 1px solid #0D47A1;
                 border-radius: 5px;
+                text-align: left;
+            }}
+            .image img {{
+                max-height: 100vh;    /* Fit vertically within the viewport */
+                width: auto;
+                object-fit: contain;
+                border-radius: 5px;
             }}
             .biblio, .tags {{
                 padding: 10px;
@@ -144,8 +155,11 @@ def generate_html_page(data, title):
     """
 
     # Save the HTML page
-    file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")],
-                                             title="Save HTML Page")
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".html",
+        filetypes=[("HTML files", "*.html")],
+        title="Save HTML Page"
+    )
     if file_path:
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)
