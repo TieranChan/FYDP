@@ -25,8 +25,8 @@ def on_closing():
 
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
-   
-    description,location, size, image_titles, biblio_ref, tags, size_components=logic.extract_fields(data)
+
+    description, location, size, image_titles, biblio_ref, tags, size_components = logic.extract_fields(data)
     html_sections = []
 
     # Add sections conditionally
@@ -87,7 +87,7 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    # Combine all sections
+    # Combine all sections with updated styling
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -98,23 +98,41 @@ def generate_html_page(data, title):
         <style>
             body {{
                 font-family: Arial, sans-serif;
-                background-color: #E0F0FD;
-                color: #0D47A1;
+                background-color: white;
+                color: black;
                 margin: 20px;
             }}
-            h1, h2 {{
+            h1 {{
                 color: #0D47A1;
+                border-bottom: 2px solid #0D47A1;
+                padding-bottom: 10px;
+            }}
+            h2 {{
+                color: #0D47A1;
+                border-bottom: 1px solid #0D47A1;
+                padding-bottom: 5px;
             }}
             .section {{
                 margin-bottom: 20px;
+                padding: 15px;
+                border: 1px solid #0D47A1;
+                border-radius: 8px;
+                background-color: #f9f9f9;
             }}
             .image {{
                 margin: 10px 0;
+                padding: 5px;
+                border: 1px solid #0D47A1;
+                border-radius: 5px;
             }}
             .biblio, .tags {{
-                background-color: #BBDEFB;
                 padding: 10px;
+                border: 1px solid #0D47A1;
                 border-radius: 5px;
+                background-color: #f1faff;
+            }}
+            p {{
+                line-height: 1.6;
             }}
         </style>
     </head>
@@ -125,8 +143,9 @@ def generate_html_page(data, title):
     </html>
     """
 
-    # Save the HTML
-    file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")], title="Save HTML Page")
+    # Save the HTML page
+    file_path = filedialog.asksaveasfilename(defaultextension=".html", filetypes=[("HTML files", "*.html")],
+                                             title="Save HTML Page")
     if file_path:
         with open(file_path, "w", encoding="utf-8") as file:
             file.write(html_content)

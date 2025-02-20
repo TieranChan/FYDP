@@ -11,8 +11,8 @@ mysql_username = "root"
 mysql_password = "YellowMYSQL45*"
 
 #global color scheme
-#BG_COLOR = "#E0F0FD"  # Light blue background
-BG_COLOR = "white"
+BG_COLOR = "#E0F0FD"  # Light blue background
+#BG_COLOR = "white"  #white backround
 ENTRY_COLOR = "#BBDEFB"  # Lighter blue for input fields
 BUTTON_COLOR = "#96CCF9"  # Button blue
 BUTTON_TEXT = "white"
