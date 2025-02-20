@@ -538,7 +538,8 @@ def open_select_where_to_store_window(title="", description="", references=None,
             select_window.destroy()
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
-    tk.Button(
+
+    send_to_db_button = tk.Button(
         select_window,
         text="Send to Database",
         font=config.FONT_BOLD,
@@ -548,8 +549,13 @@ def open_select_where_to_store_window(title="", description="", references=None,
         activeforeground="white",
         padx=10,
         pady=5,
-        command=send_to_selected_folder
-    ).pack(pady=20)
+        command=lambda: (
+            send_to_selected_folder(),
+            QR.open_main_menu_window()
+        )
+    )
+
+    send_to_db_button.pack(pady=20)
     select_window.mainloop()
 
 
@@ -982,7 +988,7 @@ def modification_abort(window_4, title):
     # Yes button - continue modifying.
     tk.Button(
         border_frame,
-        text="Yes",
+        text="Keep modifying",
         font=config.FONT_BOLD,
         bg=config.BUTTON_COLOR,
         fg="white",
@@ -996,7 +1002,7 @@ def modification_abort(window_4, title):
     # Cancel button - abort modifications and go back.
     tk.Button(
         border_frame,
-        text="Cancel",
+        text="Go back without saving",
         font=config.FONT_BOLD,
         bg="red",
         fg="white",
