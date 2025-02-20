@@ -423,12 +423,12 @@ def send_to_db_window(title="", description="", references=None, location="", si
     size_label.pack(anchor="center")
     size_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
     size_frame.pack(anchor="center", pady=10)
-    height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    height_entry.pack(side="left", padx=5)
-    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    width_entry.pack(side="left", padx=5)
     length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     length_entry.pack(side="left", padx=5)
+    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    width_entry.pack(side="left", padx=5)
+    height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    height_entry.pack(side="left", padx=5)
     length_entry.insert(0, clean_size(size.get('Length', 0)))
     width_entry.insert(0, clean_size(size.get('Width', 0)))
     height_entry.insert(0, clean_size(size.get('Height', 0)))
@@ -794,12 +794,12 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     size_label.pack(anchor="center")
     size_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
     size_frame.pack(anchor="center", pady=10)
-    height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    height_entry.pack(side="left", padx=5)
-    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
-    width_entry.pack(side="left", padx=5)
     length_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     length_entry.pack(side="left", padx=5)
+    width_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    width_entry.pack(side="left", padx=5)
+    height_entry = tk.Entry(size_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    height_entry.pack(side="left", padx=5)
     size_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     size_error.pack(anchor="center")
     keyword_label = tk.Label(second_frame, text="Keywords/Tags:", font=config.FONT_BOLD, bg=config.BG_COLOR)
@@ -943,7 +943,7 @@ def send_to_database(folder, title, description, references, location, size, tag
         data = (title, description, location, refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7],
                 refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5],
                 new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
-                new_tags[13], new_tags[14], height, width, length, id_numb)
+                new_tags[13], new_tags[14], length, width, height, id_numb)
     else:
         # Creating the unique key by hashing the title and taking the first 10 characters
         # I am assuming here that there can't be 2 entries with the same title
@@ -958,7 +958,7 @@ def send_to_database(folder, title, description, references, location, size, tag
                 refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9],
                 new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5], new_tags[6], new_tags[7],
                 new_tags[8], new_tags[9],
-                new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14], height, width, length)
+                new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14], length, width, height)
 
     connection = mysql.connector.connect(
         host="localhost",
