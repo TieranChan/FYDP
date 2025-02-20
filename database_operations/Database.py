@@ -437,6 +437,20 @@ def send_to_db_window(title="", description="", references=None, location="", si
     send_button.pack(anchor="center")
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=config.BG_COLOR)
     space_label.pack(anchor="center")
+
+    # Back button
+    back_button = tk.Button(
+        second_frame,
+        text="Back",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            modification_abort(window_4, title)
+        )
+    )
+    back_button.pack(pady=10)
+
     update_character_count()
     update_image_titles()
     update_upload_count()
@@ -930,6 +944,74 @@ def decode_data(filepath):
         binary_data=file.read()
     return binary_data
 
+
+def modification_abort(window_4, title):
+    """Display a modal abort window that prevents interaction with window_4.
+    When the user clicks (attempting to interact with the background), the window border flashes red.
+    """
+    # Create the abort window as a child of window_4
+    abort_window = tk.Toplevel(window_4)
+    abort_window.transient(window_4)
+    abort_window.grab_set()  # Make the window modal
+    abort_window.title("Confirm Modification Abort")
+
+    # Create a frame with a highlight border inside the abort window.
+    border_frame = tk.Frame(abort_window, bg=config.BG_COLOR,
+                            highlightthickness=2, highlightbackground=config.BG_COLOR)
+    border_frame.pack(fill="both", expand=True)
+
+    # Function to flash the border red when a click is detected.
+    def on_click(event):
+        border_frame.config(highlightbackground="red")
+        # After 500 ms, reset the border to its original color.
+        abort_window.after(500, lambda: border_frame.config(highlightbackground=config.BG_COLOR))
+
+    # Bind any left-click in the abort window to on_click.
+    abort_window.bind("<Button-1>", on_click)
+
+    # Place your message and buttons inside the border_frame.
+    tk.Label(
+        border_frame,
+        text="You have unsaved changes. Do you want to continue modifying or go back without saving?",
+        font=config.FONT,
+        fg=config.TEXT_COLOR,
+        bg=config.BG_COLOR,
+        wraplength=280,  # Ensure text wraps nicely
+    ).pack(pady=10)
+
+    # Yes button - continue modifying.
+    tk.Button(
+        border_frame,
+        text="Yes",
+        font=config.FONT_BOLD,
+        bg=config.BUTTON_COLOR,
+        fg="white",
+        activebackground=config.TEXT_COLOR,
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: abort_window.destroy()
+    ).pack(side="left", padx=20, pady=10)
+
+    # Cancel button - abort modifications and go back.
+    tk.Button(
+        border_frame,
+        text="Cancel",
+        font=config.FONT_BOLD,
+        bg="red",
+        fg="white",
+        activebackground="#D32F2F",
+        activeforeground="white",
+        padx=10,
+        pady=5,
+        command=lambda: (
+            abort_window.destroy(),
+            window_4.destroy(),
+            QR.open_modify_delete_window(title)
+        )
+    ).pack(side="right", padx=20, pady=10)
+
+    abort_window.mainloop()
 
 
 if __name__ == "__main__":

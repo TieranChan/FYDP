@@ -5,20 +5,13 @@ from io import BytesIO
 import segno
 import webbrowser
 import sys
-#sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
 
 from database_operations import Database
-#from database_operations import Database_existing
 import importlib.util
 import sys
-#sys.path.append(r"C:\Users\Tiera\FYDP")
 
-spec = importlib.util.spec_from_file_location("Database_existing", r"/home/user/GetHub/UnitTest_V2/FYDP/database_operations/Database_existing.py")
-Database_existing = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(Database_existing)
 import mysql.connector
 from tkinter import messagebox
-#sys.path.append(r"C:\Users\Tiera\FYDP")
 import config
 
 
@@ -638,8 +631,8 @@ def open_modify_delete_window(title):
         padx=10,
         pady=5,
         command=lambda: [
-            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num), #Laplante changed this to just database
             modify_delete_window.destroy(),
+            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num),
         ]  # Pass title, description, and references
     ).pack(pady=10)
 
@@ -911,6 +904,6 @@ def create_folder(folder_name):
         connection.close()
 
 if __name__ == "__main__":
-    mysql_login_window()  # Prompt for MySQL credentials
-    #open_main_menu_window()
+    #mysql_login_window()  # Prompt for MySQL credentials
+    open_main_menu_window()
 

@@ -1,0 +1,40 @@
+#Headers for lupascu
+
+import tkinter as tk
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox
+from PIL import Image, ImageTk
+from io import BytesIO
+import segno
+import webbrowser
+import sys
+from database_operations import Database
+import importlib.util
+import sys
+import mysql.connector
+from tkinter import messagebox
+import config
+from html_operations import logic
+
+#Headers for laplante
+
+import tkinter as tk
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox
+from PIL import Image, ImageTk
+from io import BytesIO
+import segno
+import webbrowser
+import sys
+#sys.path.append(r"C:\Users\Tiera\FYDP\database_operations")
+from database_operations import Database
+#from database_operations import Database_existing
+import importlib.util
+import sys
+#sys.path.append(r"C:\Users\Tiera\FYDP")
+spec = importlib.util.spec_from_file_location("Database_existing", r"/home/user/GetHub/UnitTest_V2/FYDP/database_operations/Database_existing.py")
+Database_existing = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(Database_existing)
+import mysql.connector
+from tkinter import messagebox
+#sys.path.append(r"C:\Users\Tiera\FYDP")
+import config
+from html_operations import logic

@@ -15,6 +15,7 @@ def parse_size_to_dict(size_str):
     return size_dict
 
 
+
 def send_to_database(folder, title="", description="", references=None, location="", size="", tags="", image_titles=None):
     # TODO
     # À implementer par LAPLANTE
