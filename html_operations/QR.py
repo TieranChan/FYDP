@@ -1,16 +1,13 @@
 import tkinter as tk
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox
 from PIL import Image, ImageTk
 from io import BytesIO
 import segno
 import webbrowser
 import sys
-import os
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + "/.."))
-import importlib.util
-spec = importlib.util.spec_from_file_location("Database", r"C:\Users\Tiera\FYDP\database_operations\Database.py")
-Database = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(Database)
 from database_operations import Database
+import importlib.util
+import sys
 import mysql.connector
 from tkinter import messagebox
 import config
@@ -293,6 +290,20 @@ def open_options_window(title, html_path):
         pady=5,
         command=lambda: (open_qr_code_window(title, html_path), options_window.destroy())
     ).pack(pady=10)
+
+    # Back button
+    back_button = tk.Button(
+        options_window,
+        text="Back to home",
+        font=config.FONT,
+        fg=config.BUTTON_TEXT,
+        bg=config.BUTTON_COLOR,
+        command=lambda: (
+            options_window.destroy(),
+            open_main_menu_window()
+        )
+    )
+    back_button.pack(pady=10)
 
 
 def open_qr_code_window(title, html_path):

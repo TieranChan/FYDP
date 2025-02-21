@@ -1,8 +1,3 @@
-# In this file, the size information is treated as a string and is passed directly to the GUI for display.
-# When the size is provided (e.g., "Length: 10 Width: 20 Height: 5"), it is shown as a simple string in the final check window.
-# The size is not structured in a specific format (e.g., dictionary or object), which makes it less flexible for more complex operations.
-# The size is displayed as a single string concatenating the length, width, and height.
-
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, ttk, Frame, BOTH, LEFT, RIGHT, Y, Canvas, messagebox
 import sys
@@ -905,7 +900,7 @@ def modification_abort(window_4, title):
     ).pack(side="left", padx=20, pady=10)
 
     # Cancel button - abort modifications and go back.
-    tk.Button(
+    cancel_button = (tk.Button(
         border_frame,
         text="Go back without saving",
         font=config.FONT_BOLD,
@@ -915,12 +910,13 @@ def modification_abort(window_4, title):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (
+        command=lambda: [
             abort_window.destroy(),
             window_4.destroy(),
             QR.open_modify_delete_window(title)
-        )
-    ).pack(side="right", padx=20, pady=10)
+        ]
+    ))
+    cancel_button.pack(side="right", padx=20, pady=10)
 
     abort_window.mainloop()
 
