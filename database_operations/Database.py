@@ -188,21 +188,53 @@ def send_to_db_window(title="", description="", references=None, location="", si
         biblio_ref = [entry.get().strip() for entry in ref_entries if entry.get().strip()]
         location_val = location_entry.get().strip()
 
-        # Build the size dict from the three entry fields. Laplante here, this is now somewhat redundant, but I'll keep it nonetheless.
+        is_valid = True  # Overall validity flag
+
+        # Build the size dict from the three entry fields.
         length = length_entry.get().strip()
         width = width_entry.get().strip()
         height = height_entry.get().strip()
-        size_dict = {"Height": "", "Width": "","Length": ""}
+        size_dict = {"Height": "", "Width": "", "Length": ""}
+
         if length:
-            size_dict["Length"] = length
+            try:
+                length_val = float(length)
+                if length_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Length"] = length
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
+
         if width:
-            size_dict["Width"] = width
+            try:
+                width_val = float(width)
+                if width_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Width"] = width
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
+
         if height:
-            size_dict["Height"] = height
+            try:
+                height_val = float(height)
+                if height_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Height"] = height
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
 
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
-        is_valid = True
+        # Validate title and description.
         if not title_val:
             title_error.config(text="Please provide a title", fg="red")
             is_valid = False
@@ -217,7 +249,8 @@ def send_to_db_window(title="", description="", references=None, location="", si
 
         if is_valid:
             window_4.destroy()
-            final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val, window_4, id_num)
+            final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
+                               window_4, id_num)
 
     def upload_image():
         """Handle image upload."""
@@ -587,40 +620,78 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     window_4.configure(bg=config.BG_COLOR)
     if image_titles is None:
         image_titles = []
+
     def go_to_window_6():
         """Transition to Window 6 with the collected data."""
         title_val = title_text.get("1.0", "end-1c").strip()
         description_val = description_text.get("1.0", "end-1c").strip()
-        biblio_ref_val = [entry.get().strip() for entry in ref_entries if entry.get().strip()]
+        biblio_ref = [entry.get().strip() for entry in ref_entries if entry.get().strip()]
         location_val = location_entry.get().strip()
-        # Build the size string from the entry fields
-        height = height_entry.get().strip()
-        width = width_entry.get().strip()
+
+        is_valid = True  # Overall validity flag
+
+        # Build the size dict from the three entry fields.
         length = length_entry.get().strip()
-        #laplante here, changing all string dimensions to a dictionary
-        size_dict = {"Height":"", "Width":"","Length":""}
+        width = width_entry.get().strip()
+        height = height_entry.get().strip()
+        size_dict = {"Height": "", "Width": "", "Length": ""}
+
         if length:
-            size_dict["Length"]=length
+            try:
+                length_val = float(length)
+                if length_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Length"] = length
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
+
         if width:
-            size_dict["Width"]= width
+            try:
+                width_val = float(width)
+                if width_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Width"] = width
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
+
         if height:
-            size_dict["Height"]=height
+            try:
+                height_val = float(height)
+                if height_val > 99999.99:
+                    size_error.config(text="Please keep the sizes under 99'999.99", fg="red")
+                    is_valid = False
+                else:
+                    size_dict["Height"] = height
+            except ValueError:
+                size_error.config(text="Please enter valid numeric values for size", fg="red")
+                is_valid = False
 
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
-        is_valid = True
+
+        # Validate title and description.
         if not title_val:
             title_error.config(text="Please provide a title", fg="red")
             is_valid = False
         else:
             title_error.config(text="")
+
         if not description_val:
             description_error.config(text="Please provide a description", fg="red")
             is_valid = False
         else:
             description_error.config(text="")
+
         if is_valid:
             window_4.destroy()
-            final_check_window(title_val, description_val, image_titles, biblio_ref_val, location_val, size_dict, tags_val, window_4)
+            final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
+                               window_4)
+
     def upload_image():
         """Handle image upload."""
         if len(image_titles) < 5:
