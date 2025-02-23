@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, Toplevel, Scrollbar, Listbox
+from tkinter import filedialog, Toplevel, Scrollbar, Listbox, messagebox
 from PIL import Image, ImageTk
 from io import BytesIO
 import segno
@@ -12,11 +12,76 @@ import mysql.connector
 from tkinter import messagebox
 import config
 from html_operations import logic
+import subprocess
+import tempfile
+import os
 
 
 
 import base64
 
+def select_printer_and_print(qr_image):
+    """
+    Opens a printer selection dialog on Linux and prints the provided QR code image.
+    'qr_image' should be a PIL Image instance.
+    """
+    # Retrieve available printers using lpstat
+    printers = []
+    try:
+        output = subprocess.check_output(["lpstat", "-p"], universal_newlines=True)
+        # lpstat output lines usually start with "printer <printer_name> ..."
+        for line in output.splitlines():
+            if line.startswith("printer"):
+                parts = line.split()
+                if len(parts) > 1:
+                    printers.append(parts[1])
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not retrieve printer list: {e}")
+        return
+
+    if not printers:
+        messagebox.showerror("Error", "No printers found.")
+        return
+
+    # Create a simple printer selection window
+    select_window = tk.Toplevel()
+    select_window.title("Select Printer")
+    tk.Label(select_window, text="Select Printer:").pack(pady=10)
+
+    printer_listbox = tk.Listbox(select_window, width=50)
+    for printer in printers:
+        printer_listbox.insert(tk.END, printer)
+    printer_listbox.pack(padx=10, pady=10)
+
+    def on_select():
+        try:
+            selected_printer = printer_listbox.get(printer_listbox.curselection())
+        except tk.TclError:
+            messagebox.showwarning("Selection Error", "Please select a printer.")
+            return
+        select_window.destroy()
+        print_qr_code(qr_image, selected_printer)
+
+    tk.Button(select_window, text="Print", command=on_select, padx=10, pady=5,
+              bg="#007acc", fg="white").pack(pady=10)
+
+def print_qr_code(qr_image, printer_name):
+    """
+    Saves the QR code image to a temporary file and sends it to the selected printer via lpr.
+    """
+    # Save the image temporarily as a PNG file.
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    qr_image.save(temp_file.name, "PNG")
+    temp_file.close()
+
+    try:
+        # Use lpr command to send the file to the selected printer.
+        subprocess.run(["lpr", "-P", printer_name, temp_file.name], check=True)
+        messagebox.showinfo("Print", "Print job sent successfully.")
+    except subprocess.CalledProcessError as e:
+        messagebox.showerror("Print Error", f"An error occurred while printing: {e}")
+    finally:
+        os.remove(temp_file.name)
 
 def on_closing():
     """Function to exit the application when the window is closed."""
@@ -353,7 +418,7 @@ def open_qr_code_window(title, html_path):
         command=lambda: logic.save_qr_to_file(html_path)
     ).pack(pady=10)
 
-    # Print button (placeholder for actual print functionality)
+    # In your QR code window, replace the Print button command:
     tk.Button(
         qr_window,
         text="Print",
@@ -364,7 +429,7 @@ def open_qr_code_window(title, html_path):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: print(f"Printing QR Code for {html_path}")  # Replace with actual print logic
+        command=lambda: select_printer_and_print(qr_image)
     ).pack(pady=10)
 
     # Back button
