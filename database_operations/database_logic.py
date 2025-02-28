@@ -92,7 +92,7 @@ def get_dims(dimensions):
 This function,as the name indicates, sends data to the database. That is both in the case of the creation of an entry and 
 the modification of an existing entry.
 """
-def send_to_database(folder, title, description, references, location, size, tags, image_titles, id_numb):
+def send_to_database(folder, title, description, references, location, size, tags, image_titles, id_numb, unit):
     #Laplante here, I need to use the og id_num value of an entry while modifying this allows staff to change the title
     #of an entry should they wish to. id_numb is the og id, id_num is one generated for a new entry. As per Chan's design,
     #we need to let staff know that they must never reuse a title... at least in the same folder.
@@ -100,6 +100,9 @@ def send_to_database(folder, title, description, references, location, size, tag
     refs = refs_format(references)
     new_tags = tag_format(tags)
     length, width, height = get_dims(size)
+
+    if id_numb is None:
+        id_numb="NULL"
 
     #Using prepared statements to handle escaping and insertion of binary data safely
     # Prepare the SQL query with placeholders for the values
@@ -109,26 +112,26 @@ def send_to_database(folder, title, description, references, location, size, tag
                  f"reference_4=%s, reference_5=%s, reference_6=%s, reference_7=%s, reference_8=%s, reference_9=%s,"
                  f" reference_10=%s, tag_1=%s, tag_2=%s, tag_3=%s, tag_4=%s, tag_5=%s, tag_6=%s, tag_7=%s, tag_8=%s,"
                  f" tag_9=%s, tag_10=%s, tag_11=%s, tag_12=%s, tag_13=%s, tag_14=%s, tag_15=%s, length=%s, width=%s,"
-                 f" height=%s WHERE id_num=%s;")
+                 f" height=%s, unit=%s WHERE id_num=%s;")
         data = (title, description, location, refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7],
                 refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5],
                 new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
-                new_tags[13], new_tags[14], length, width, height, id_numb)
+                new_tags[13], new_tags[14], length, width, height, unit, id_numb)
     else:
         # Creating the unique key by hashing the title and taking the first 10 characters
         # I am assuming here that there can't be 2 entries with the same title
         full_hash = hashlib.sha256(title.encode()).hexdigest()
         id_num = full_hash[:10]
         query = (f"INSERT INTO {folder} (title, description, id_num, img_1, img_2, img_3, img_4, img_5, location, "
-                 f"reference_1, reference_2, reference_3, reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
-                 f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, "
-                 f"length, width, height) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-                 f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
-        data = (title, description, id_num, images[0], images[1], images[2], images[3], images[4], location,
-                refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9],
-                new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5], new_tags[6], new_tags[7],
-                new_tags[8], new_tags[9],
-                new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14], length, width, height)
+                 f"reference_1, reference_2, reference_3, reference_4, reference_5, reference_6, reference_7, reference_8, "
+                 f"reference_9, reference_10, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10,"
+                 f" tag_11, tag_12, tag_13, tag_14, tag_15, length, width, height, unit) "
+                 f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                 f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
+        data = (title, description, id_num, images[0], images[1], images[2], images[3], images[4], location, refs[0],
+                refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9], new_tags[0],
+                new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5], new_tags[6], new_tags[7], new_tags[8],
+                new_tags[9], new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14], length, width, height, unit)
 
     connection = mysql.connector.connect(
         host="localhost",

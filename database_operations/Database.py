@@ -9,7 +9,7 @@ import config
 from html_operations import QR, logic
 
 
-def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4, id_num=None):
+def final_check_window(title, description, image_titles, biblio_ref, location, size, tags, window_4, id_num=None, unit=None):
     """Creates Window 6: Display title, description, image titles, and send button."""
     window_6 = tk.Tk()
     window_6.title("Window 6 - Display Collected Data")
@@ -129,7 +129,8 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
                 size=size,  # Pass size as a dict
                 tags=tags,
                 image_titles=image_titles,
-                id_num=id_num
+                id_num=id_num,
+                unit=unit
             )
         )
     )
@@ -144,7 +145,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         bg=config.BUTTON_COLOR,
         command=lambda: (
             window_6.destroy(),
-            open_select_where_to_store_window(title, description, references=biblio_ref, location=location, size=size, tags=tags, image_titles=image_titles, id_num=id_num)
+            open_select_where_to_store_window(title, description, references=biblio_ref, location=location, size=size, tags=tags, image_titles=image_titles, id_num=id_num, unit=unit)
         )
     )
     send_button.pack(pady=20)
@@ -152,7 +153,7 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     window_6.mainloop()
 
 
-def send_to_db_window(title="", description="", references=None, location="", size={}, tags="", image_titles=None, id_num=None):
+def send_to_db_window(title="", description="", references=None, location="", size={}, tags="", image_titles=None, id_num=None, unit=None):
     """Creates Window 4: Display title, description, and reference input functionality."""
     window_4 = tk.Tk()
     window_4.title("4 Database - Insert Images")
@@ -250,7 +251,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
         if is_valid:
             window_4.destroy()
             final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
-                               window_4, id_num)
+                               window_4, id_num, unit)
 
     def upload_image():
         """Handle image upload."""
@@ -518,7 +519,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     window_4.mainloop()
 
 
-def open_select_where_to_store_window(title="", description="", references=None, location="", size="", tags="", image_titles=None, id_num=None):
+def open_select_where_to_store_window(title="", description="", references=None, location="", size="", tags="", image_titles=None, id_num=None, unit=None):
     """Open a window to select where to store the data."""
     select_window = tk.Tk()
     select_window.title("Select Folder to Store Data")
@@ -587,7 +588,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     def send_to_selected_folder():
         try:
             selected_folder = folder_listbox.get(folder_listbox.curselection())
-            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num)
+            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num, unit)
             select_window.destroy()
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
@@ -612,7 +613,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
     select_window.mainloop()
 
 
-def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], location="", size={}, tags=[]):
+def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], location="", size={}, tags=[], unit=None):
     """Creates Window 4: Display title, description, and image upload functionality."""
     window_4 = tk.Tk()
     window_4.title("4 Database - Insert Images")
@@ -690,7 +691,7 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
         if is_valid:
             window_4.destroy()
             final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
-                               window_4)
+                               window_4, None, unit)
 
     def upload_image():
         """Handle image upload."""

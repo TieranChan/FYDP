@@ -720,6 +720,9 @@ def open_modify_delete_window(title):
 
     # Format size as a dictionary
     size = {"Length": length, "Width": width, "Height": height}
+    #Laplante adding unit as an extra variable to be returned for potential modification
+    unit = data.get("unit")
+
     # Extract tags
     tags = [
         data.get(f"tag_{i}") for i in range(1, 16)
@@ -755,7 +758,7 @@ def open_modify_delete_window(title):
         pady=5,
         command=lambda: [
             modify_delete_window.destroy(),
-            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num),
+            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num, unit),
         ]  # Pass title, description, and references
     ).pack(pady=10)
 

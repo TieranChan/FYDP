@@ -147,7 +147,7 @@ def fetch_data_for_title_dynamic(title):
             query = f"""
             SELECT title, description, id_num, img_1, img_2, img_3, img_4, img_5, reference_1, reference_2, reference_3, 
                    reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10,
-                   location, height, width, length, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, 
+                   location, height, width, length, unit, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, 
                    tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
             FROM `{table}`
             WHERE title = %s
@@ -161,7 +161,7 @@ def fetch_data_for_title_dynamic(title):
                     "img_1", "img_2", "img_3", "img_4", "img_5",
                     "reference_1", "reference_2", "reference_3", "reference_4", "reference_5", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
                     "location",
-                    "height", "width", "length",
+                    "height", "width", "length", "unit",
                     "tag_1", "tag_2", "tag_3", "tag_4", "tag_5", "tag_6", "tag_7", "tag_8", "tag_9", "tag_10",
                     "tag_11", "tag_12", "tag_13", "tag_14", "tag_15"
                 ]
