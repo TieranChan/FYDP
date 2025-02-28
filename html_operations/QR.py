@@ -716,7 +716,7 @@ def open_modify_delete_window(title):
     # Extract size components
     length = data.get("length", "")  # Use the database column names
     width = data.get("width", "")
-    height = data.get("hight", "")  # Assuming "hight" is the column name
+    height = data.get("height", "")
 
     # Format size as a dictionary
     size = {"Length": length, "Width": width, "Height": height}

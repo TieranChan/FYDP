@@ -109,7 +109,7 @@ def send_to_database(folder, title, description, references, location, size, tag
                  f"reference_4=%s, reference_5=%s, reference_6=%s, reference_7=%s, reference_8=%s, reference_9=%s,"
                  f" reference_10=%s, tag_1=%s, tag_2=%s, tag_3=%s, tag_4=%s, tag_5=%s, tag_6=%s, tag_7=%s, tag_8=%s,"
                  f" tag_9=%s, tag_10=%s, tag_11=%s, tag_12=%s, tag_13=%s, tag_14=%s, tag_15=%s, length=%s, width=%s,"
-                 f" hight=%s WHERE id_num=%s;")
+                 f" height=%s WHERE id_num=%s;")
         data = (title, description, location, refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7],
                 refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5],
                 new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
@@ -122,7 +122,7 @@ def send_to_database(folder, title, description, references, location, size, tag
         query = (f"INSERT INTO {folder} (title, description, id_num, img_1, img_2, img_3, img_4, img_5, location, "
                  f"reference_1, reference_2, reference_3, reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
                  f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, "
-                 f"length, width, hight) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                 f"length, width, height) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
                  f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
         data = (title, description, id_num, images[0], images[1], images[2], images[3], images[4], location,
                 refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9],

@@ -30,7 +30,7 @@ def extract_fields(data):
     description = safe(data.get("description"))
     location = safe(data.get("location"))
     size_components = [
-        f"H: {safe(data.get('hight'))}",
+        f"H: {safe(data.get('height'))}",
         f"W: {safe(data.get('width'))}",
         f"L: {safe(data.get('length'))}"
     ]
@@ -147,7 +147,7 @@ def fetch_data_for_title_dynamic(title):
             query = f"""
             SELECT title, description, id_num, img_1, img_2, img_3, img_4, img_5, reference_1, reference_2, reference_3, 
                    reference_4, reference_5, reference_6, reference_7, reference_8, reference_9, reference_10,
-                   location, hight, width, length, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, 
+                   location, height, width, length, tag_1, tag_2, tag_3, tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, 
                    tag_10, tag_11, tag_12, tag_13, tag_14, tag_15
             FROM `{table}`
             WHERE title = %s
@@ -161,7 +161,7 @@ def fetch_data_for_title_dynamic(title):
                     "img_1", "img_2", "img_3", "img_4", "img_5",
                     "reference_1", "reference_2", "reference_3", "reference_4", "reference_5", "reference_6", "reference_7", "reference_8", "reference_9", "reference_10",
                     "location",
-                    "hight", "width", "length",
+                    "height", "width", "length",
                     "tag_1", "tag_2", "tag_3", "tag_4", "tag_5", "tag_6", "tag_7", "tag_8", "tag_9", "tag_10",
                     "tag_11", "tag_12", "tag_13", "tag_14", "tag_15"
                 ]
@@ -210,7 +210,7 @@ def create_folder(folder_name):
         f"reference_7 VARCHAR(75),reference_8 VARCHAR(75),reference_9 VARCHAR(75),reference_10 VARCHAR(75),tag_1 VARCHAR(20),"
         f"tag_2 VARCHAR(20),tag_3 VARCHAR(20),tag_4 VARCHAR(20),tag_5 VARCHAR(20),tag_6 VARCHAR(20),tag_7 VARCHAR(20),"
         f"tag_8 VARCHAR(20),tag_9 VARCHAR(20),tag_10 VARCHAR(20),tag_11 VARCHAR(20),tag_12 VARCHAR(20),tag_13 VARCHAR(20),"
-        f"tag_14 VARCHAR(20),tag_15 VARCHAR(20),hight VARCHAR(8),width VARCHAR(8),length VARCHAR(8));")
+        f"tag_14 VARCHAR(20),tag_15 VARCHAR(20),height VARCHAR(8),width VARCHAR(8),length VARCHAR(8), unit VARCHAR(10), UNIQUE(id_num));")
 
     cursor = connection.cursor()
     cursor.execute(command)
