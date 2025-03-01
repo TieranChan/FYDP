@@ -494,7 +494,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     unit_label.pack(side="left")
     unit_entry = tk.Entry(unit_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
     unit_entry.pack(side="left", padx=5)
-    unit_entry.insert(tk.END, unit if unit else "")
+    unit_entry.insert(tk.END, clean_field(unit))
     # Bind key release to update character count for unit entry
     unit_entry.bind("<KeyRelease>", update_character_count)
     unit_count_label = tk.Label(unit_frame, text="0/10", font=config.FONT_TEXT, bg=config.BG_COLOR)
@@ -511,7 +511,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
             keyword_row_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
             keyword_row_frame.pack(anchor="center", pady=2)
         keyword_entry = tk.Entry(keyword_row_frame, font=config.FONT_TEXT, width=20, bg=config.ENTRY_COLOR)
-        keyword_entry.insert(tk.END, tag)
+        keyword_entry.insert(tk.END, clean_field(tag))
         keyword_entry.grid(row=row, column=col * 2, padx=5, pady=5)
         keyword_count_label = tk.Label(keyword_row_frame, text="0/20", font=config.FONT_TEXT, bg=config.BG_COLOR)
         keyword_count_label.grid(row=row, column=(col * 2) + 1, padx=5)

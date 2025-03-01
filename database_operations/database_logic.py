@@ -101,8 +101,8 @@ def send_to_database(folder, title, description, references, location, size, tag
     new_tags = tag_format(tags)
     length, width, height = get_dims(size)
 
-    if id_numb is None:
-        id_numb="NULL"
+    if unit is None:
+        unit="NULL"
 
     #Using prepared statements to handle escaping and insertion of binary data safely
     # Prepare the SQL query with placeholders for the values
