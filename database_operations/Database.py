@@ -93,10 +93,12 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
     else:
         create_centered_label("No location was provided", font=config.FONT_BOLD, fg="red")
 
-    # Display size if at least one of its components is valid
-    if size and (is_valid(size.get("Length", "")) or is_valid(size.get("Width", "")) or is_valid(size.get("Height", ""))):
+    # Display size if at least one of its components or measurement unit is valid
+    if size and (is_valid(size.get("Length", "")) or is_valid(size.get("Width", "")) or is_valid(size.get("Height", "")) or is_valid(unit)):
         create_centered_label("Size:", font=config.FONT_BOLD)
-        size_str = f"Length: {size['Length']} Width: {size['Width']} Height: {size['Height']}"
+        size_str = f"Length: {size.get('Length', '')} Width: {size.get('Width', '')} Height: {size.get('Height', '')}"
+        if is_valid(unit):
+            size_str += f" (Unit: {unit})"
         create_centered_label(size_str, font=config.FONT)
     else:
         create_centered_label("No sizes were given", font=config.FONT_BOLD, fg="red")
@@ -166,9 +168,9 @@ def send_to_db_window(title="", description="", references=None, location="", si
         tags = []
 
     # Initialize the preloaded size values with defaults.
-    length_value = size['Length']
-    width_value = size['Width']
-    height_value = size['Height']
+    length_value = size.get('Length', "")
+    width_value = size.get('Width', "")
+    height_value = size.get('Height', "")
 
     def clean_field(value):
         """Return an empty string if value is None or 'NULL' (ignoring case), otherwise return the trimmed value."""
@@ -233,6 +235,15 @@ def send_to_db_window(title="", description="", references=None, location="", si
                 size_error.config(text="Please enter valid numeric values for size", fg="red")
                 is_valid = False
 
+        # Validate the measurement unit field BEFORE destroying window_4
+        unit_val = unit_entry.get().strip()
+        if unit_val:
+            if len(unit_val) > 10:
+                size_error.config(text="Measurement unit must be 10 characters or less", fg="red")
+                is_valid = False
+            else:
+                size_dict["Unit"] = unit_val
+
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
         # Validate title and description.
@@ -249,9 +260,11 @@ def send_to_db_window(title="", description="", references=None, location="", si
             description_error.config(text="")
 
         if is_valid:
+            # Store the unit value before destroying the window
+            final_unit = unit_val
             window_4.destroy()
             final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
-                               window_4, id_num, unit)
+                               window_4, id_num, final_unit)
 
     def upload_image():
         """Handle image upload."""
@@ -260,8 +273,6 @@ def send_to_db_window(title="", description="", references=None, location="", si
                                                    filetypes=[("JPEG Files", "*.jpg"), ("JPEG Files", "*.jpeg"),
                                                               ("PNG Files", "*.png")], initialdir="/media/user")
             if file_path:
-                # image_title = file_path.split('/')[-1] #The point of this is to display the filename to the users.
-                # That's great, but useless in the backend. I found where the image title is shown and just modified the text there.
                 image_titles.append(file_path)
                 update_image_titles()
                 update_upload_count()
@@ -354,6 +365,17 @@ def send_to_db_window(title="", description="", references=None, location="", si
                 keyword_entry.config(fg="black")
                 keyword_count_label.config(fg="black")
 
+        # Measurement Unit character count update
+        char_count_unit = len(unit_entry.get())
+        unit_count_label.config(text=f"{char_count_unit}/10")
+        if char_count_unit > 10:
+            unit_entry.config(fg="red")
+            unit_count_label.config(fg="red")
+            send_button_enabled = False
+        else:
+            unit_entry.config(fg="black")
+            unit_count_label.config(fg="black")
+
         if send_button_enabled:
             send_button.config(state="normal")
         else:
@@ -371,7 +393,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     my_canvas.configure(yscrollcommand=my_scrollbar.set)
     my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion=my_canvas.bbox("all")))
 
-    second_frame = Frame(my_canvas, bg=config.BG_COLOR)
+    second_frame = tk.Frame(my_canvas, bg=config.BG_COLOR)
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
 
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=config.BG_COLOR)
@@ -442,7 +464,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
     location_label = tk.Label(location_frame, text="Location:", font=config.FONT_BOLD, bg=config.BG_COLOR)
     location_label.pack(side="left")
     location_entry = tk.Entry(location_frame, width=40, font=config.FONT_TEXT, bg=config.ENTRY_COLOR)
-    location_entry.insert(tk.END, clean_field(location))
+    location_entry.insert(tk.END, location)
     location_entry.pack(side="left")
     location_char_count_label = tk.Label(location_frame, text="0/75", font=config.FONT_TEXT, bg=config.BG_COLOR)
     location_char_count_label.pack(side="left")
@@ -465,6 +487,18 @@ def send_to_db_window(title="", description="", references=None, location="", si
     height_entry.insert(0, clean_size(size.get('Height', 0)))
     size_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     size_error.pack(anchor="center")
+    # Measurement Unit field
+    unit_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
+    unit_frame.pack(anchor="center", pady=10)
+    unit_label = tk.Label(unit_frame, text="Measurement Unit:", font=config.FONT_BOLD, bg=config.BG_COLOR)
+    unit_label.pack(side="left")
+    unit_entry = tk.Entry(unit_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    unit_entry.pack(side="left", padx=5)
+    unit_entry.insert(tk.END, unit if unit else "")
+    # Bind key release to update character count for unit entry
+    unit_entry.bind("<KeyRelease>", update_character_count)
+    unit_count_label = tk.Label(unit_frame, text="0/10", font=config.FONT_TEXT, bg=config.BG_COLOR)
+    unit_count_label.pack(side="left")
 
     keyword_label = tk.Label(second_frame, text="Keywords/Tags:", font=config.FONT_BOLD, bg=config.BG_COLOR)
     keyword_label.pack(anchor="center", pady=10)
@@ -477,7 +511,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
             keyword_row_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
             keyword_row_frame.pack(anchor="center", pady=2)
         keyword_entry = tk.Entry(keyword_row_frame, font=config.FONT_TEXT, width=20, bg=config.ENTRY_COLOR)
-        keyword_entry.insert(tk.END, clean_field(tag))
+        keyword_entry.insert(tk.END, tag)
         keyword_entry.grid(row=row, column=col * 2, padx=5, pady=5)
         keyword_count_label = tk.Label(keyword_row_frame, text="0/20", font=config.FONT_TEXT, bg=config.BG_COLOR)
         keyword_count_label.grid(row=row, column=(col * 2) + 1, padx=5)
@@ -500,7 +534,7 @@ def send_to_db_window(title="", description="", references=None, location="", si
         fg=config.BUTTON_TEXT,
         bg=config.BUTTON_COLOR,
         command=lambda: (
-            modification_abort(window_4, title)
+            modification_abort_new(window_4)
         )
     )
     back_button.pack(pady=10)
@@ -673,6 +707,15 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
                 size_error.config(text="Please enter valid numeric values for size", fg="red")
                 is_valid = False
 
+        # Validate the measurement unit field BEFORE destroying window_4
+        unit_val = unit_entry.get().strip()
+        if unit_val:
+            if len(unit_val) > 10:
+                size_error.config(text="Measurement unit must be 10 characters or less", fg="red")
+                is_valid = False
+            else:
+                size_dict["Unit"] = unit_val
+
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
         # Validate title and description.
@@ -689,23 +732,23 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
             description_error.config(text="")
 
         if is_valid:
+            final_unit = unit_val  # Save the unit value before destroying window_4
             window_4.destroy()
             final_check_window(title_val, description_val, image_titles, biblio_ref, location_val, size_dict, tags_val,
-                               window_4, None, unit)
+                               window_4, None, final_unit)
 
     def upload_image():
         """Handle image upload."""
         if len(image_titles) < 5:
             file_path = filedialog.askopenfilename(title="Select an Image", filetypes=[("JPEG Files", "*.jpg"), ("JPEG Files", "*.jpeg"),
-                                                ("PNG Files", "*.png")],initialdir="/media/user")
+                                                ("PNG Files", "*.png")], initialdir="/media/user")
             if file_path:
-                #image_title = file_path.split('/')[-1] #The point of this is to display the filename to the users.
-                #That's great, but useless in the backend. I found where the image title is shown and just modified the text there.
                 image_titles.append(file_path)
                 update_image_titles()
                 update_upload_count()
         if len(image_titles) >= 5:
             upload_button.config(state="disabled", text="Upload limit\nreached", bg=config.BUTTON_COLOR, fg=config.BUTTON_TEXT)
+
     def update_image_titles():
         """Update the image titles list displayed in the window."""
         for widget in image_titles_frame.winfo_children():
@@ -713,14 +756,16 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
         for image in image_titles:
             image_frame = tk.Frame(image_titles_frame, bg=config.BG_COLOR)
             image_frame.pack(anchor="w", pady=2)
-            title_label = tk.Label(image_frame, text=image.split('/')[-1], font=config.FONT, bg=config.BG_COLOR)#Added the split part to the text of this label
+            title_label = tk.Label(image_frame, text=image.split('/')[-1], font=config.FONT, bg=config.BG_COLOR)
             title_label.pack(side="left")
             remove_button = tk.Button(image_frame, text="X", font=config.FONT_BOLD, fg="white", bg=config.BUTTON_COLOR,
                                       command=lambda img=image: remove_image(img))
             remove_button.pack(side="right", padx=5)
+
     def update_upload_count():
         """Update the upload count text."""
         upload_count_label.config(text=f"{len(image_titles)}/5 images uploaded")
+
     def remove_image(image_title):
         """Remove the image from the list."""
         image_titles.remove(image_title)
@@ -728,6 +773,7 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
         update_upload_count()
         if len(image_titles) < 5:
             upload_button.config(state="normal", text="Upload")
+
     def update_character_count(event=None):
         """Update character count and check if the limit is exceeded."""
         send_button_enabled = True
@@ -778,10 +824,21 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
             else:
                 keyword_entry.config(fg="black")
                 keyword_count_label.config(fg="black")
+        # Measurement Unit character count update
+        char_count_unit = len(unit_entry.get())
+        unit_count_label.config(text=f"{char_count_unit}/10")
+        if char_count_unit > 10:
+            unit_entry.config(fg="red")
+            unit_count_label.config(fg="red")
+            send_button_enabled = False
+        else:
+            unit_entry.config(fg="black")
+            unit_count_label.config(fg="black")
         if send_button_enabled:
             send_button.config(state="normal")
         else:
             send_button.config(state="disabled")
+
     main_frame = Frame(window_4, bg=config.BG_COLOR)
     main_frame.pack(fill=BOTH, expand=1)
     my_canvas = Canvas(main_frame, bg=config.BG_COLOR)
@@ -790,7 +847,7 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     my_scrollbar.pack(side=RIGHT, fill=Y)
     my_canvas.configure(yscrollcommand=my_scrollbar.set)
     my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion=my_canvas.bbox("all")))
-    second_frame = Frame(my_canvas, bg=config.BG_COLOR)
+    second_frame = tk.Frame(my_canvas, bg=config.BG_COLOR)
     my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
     space_label = tk.Label(second_frame, text="\n", font=("Helvetica", 2, "bold"), bg=config.BG_COLOR)
     space_label.pack(anchor="center")
@@ -871,6 +928,18 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     height_entry.pack(side="left", padx=5)
     size_error = tk.Label(second_frame, text="", font=config.FONT_TEXT, bg=config.BG_COLOR)
     size_error.pack(anchor="center")
+    # Measurement Unit field
+    unit_frame = tk.Frame(second_frame, bg=config.BG_COLOR)
+    unit_frame.pack(anchor="center", pady=10)
+    unit_label = tk.Label(unit_frame, text="Measurement Unit:", font=config.FONT_BOLD, bg=config.BG_COLOR)
+    unit_label.pack(side="left")
+    unit_entry = tk.Entry(unit_frame, font=config.FONT_TEXT, bg=config.ENTRY_COLOR, width=10)
+    unit_entry.pack(side="left", padx=5)
+    unit_entry.insert(tk.END, unit if unit else "")
+    # Bind key release to update character count for unit entry
+    unit_entry.bind("<KeyRelease>", update_character_count)
+    unit_count_label = tk.Label(unit_frame, text="0/10", font=config.FONT_TEXT, bg=config.BG_COLOR)
+    unit_count_label.pack(side="left")
     keyword_label = tk.Label(second_frame, text="Keywords/Tags:", font=config.FONT_BOLD, bg=config.BG_COLOR)
     keyword_label.pack(anchor="center", pady=10)
     keyword_entries = []
@@ -922,6 +991,7 @@ def make_new_entry(title="", description="", image_titles=None, biblio_ref=[], l
     for keyword_entry in keyword_entries:
         keyword_entry.bind("<KeyRelease>", update_character_count)
     window_4.mainloop()
+
 
 def modification_abort(window_4, title):
     """Display a modal abort window that prevents interaction with window_4.

@@ -100,8 +100,15 @@ def is_valid_image(image_bytes):
 
 def generate_html_page(data, title):
     """Generate an HTML page dynamically from the fetched data."""
-
+    # Extract fields from data (assuming your logic.extract_fields function returns these)
     description, location, size, image_titles, biblio_ref, tags, size_components = logic.extract_fields(data)
+
+    # Additionally, get the measurement unit from data.
+    unit = ""
+    if data.get("unit"):
+        unit = data.get("unit").strip()
+        if unit.upper() == "NULL":
+            unit = ""
 
     # Filter out fields that are the literal string "NULL"
     description = description.strip() if description and description.strip().upper() != "NULL" else ""
@@ -168,12 +175,14 @@ def generate_html_page(data, title):
         # Return True if at least one number is nonzero
         return any(int(n) != 0 for n in numbers)
 
-    # Then in your generate_html_page:
     if size and size.strip().upper() != "NULL" and size_is_nonzero(size):
+        size_text = f"{size}"
+        if unit:
+            size_text += f" (Unit: {unit})"
         html_sections.append(f"""
         <div class="section">
             <h2>Size</h2>
-            <p>{size}</p>
+            <p>{size_text}</p>
         </div>
         """)
 
@@ -228,8 +237,8 @@ def generate_html_page(data, title):
                 text-align: left;
             }}
             .image img {{
-                max-width: 100vw;   /* Fit within the viewport width */
-                max-height: 100vh;  /* Fit within the viewport height */
+                max-width: 100vw;
+                max-height: 100vh;
                 width: auto;
                 height: auto;
                 object-fit: contain;
@@ -264,6 +273,7 @@ def generate_html_page(data, title):
             file.write(html_content)
         print(f"HTML page saved to {file_path}")
         open_options_window(title, file_path)  # Transition to the options window
+
 
 
 def open_save_html(data, title):
