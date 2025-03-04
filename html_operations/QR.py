@@ -265,14 +265,14 @@ def generate_html_page(data, folder, title):
     """
 
     # Save the HTML file in the Apache public folder
-    save_path = f"/var/www/html/marinemuseuminfo.com/public_html/{folder}.{title}.html"
+    save_path = f"/var/www/html/marinemuseuminfo.com/public_html/{folder}{title}.html"
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(save_path, "w", encoding="utf-8") as file:
         file.write(html_content)
     print(f"HTML page saved to {save_path}")
 
     # Construct the URL as it will be accessed via the domain
-    url = f"http://marinemuseuminfo.com/{folder}.{title}.html"
+    url = f"http://192.168.100.1/{folder}{title}.html"
     return url
 
 
