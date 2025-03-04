@@ -276,10 +276,11 @@ def generate_html_page(data, folder, title):
     return url
 
 
-def open_save_html(data, title):
+def open_save_html(data, table):
     """Automatically generate and save the HTML file, then open the options window."""
     # Get the folder name from the data; since every title should have a folder, we use it directly.
-    folder = data["folder"]
+    folder = table
+    title = data.get("title")
     url = generate_html_page(data, folder, title)
     open_options_window(title, url)
 
@@ -612,13 +613,15 @@ def open_select_window():
 
 
 
-def open_what_to_do(data, title):
+def open_what_to_do(data, table):
     """Open a window to display options for the selected title."""
     what_to_do_window = Toplevel()
     what_to_do_window.title("What to Do Next")
     what_to_do_window.configure(bg=config.BG_COLOR)
 
     what_to_do_window.protocol("WM_DELETE_WINDOW", on_closing)
+
+    title = data.get("title")
 
     # Display the title
     tk.Label(
@@ -759,7 +762,7 @@ def open_modify_delete_window(title):
         bg=config.BUTTON_COLOR,
         command=lambda: (
             modify_delete_window.destroy(),
-            open_what_to_do(data, title)
+            open_what_to_do(data, table)
         )
     )
     back_button.pack(pady=10)
