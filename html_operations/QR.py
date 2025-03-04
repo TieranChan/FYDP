@@ -578,7 +578,7 @@ def open_select_window():
 
             if data:
                 root.withdraw()
-                open_what_to_do(data, selected_title)  # Pass the data and title to the next window
+                open_what_to_do(data, table)  # Pass the data and title to the next window
             else:
                 messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
 
@@ -657,7 +657,7 @@ def open_what_to_do(data, table):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (open_save_html(data, title), what_to_do_window.destroy())   # Pass both arguments
+        command=lambda: (open_save_html(data, table), what_to_do_window.destroy())   # Pass both arguments
     ).pack(pady=10)
 
     # Back button
