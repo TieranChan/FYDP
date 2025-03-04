@@ -1,24 +1,27 @@
+#QR.py
 import tkinter as tk
+#Messagebox for printer
 from tkinter import filedialog, Toplevel, Scrollbar, Listbox, messagebox
-from PIL import Image, ImageTk
+from PIL import Image
 from io import BytesIO
 import segno
 import webbrowser
 import sys
-from database_operations import Database
+
 import importlib.util
 import sys
+sys.path.append(r"/home/user/Documents/GitHub/FYDP")
+from database_operations import Database
 import mysql.connector
 from tkinter import messagebox
 import config
 from html_operations import logic
+
+#For Printer
 import subprocess
 import tempfile
 import os
 
-
-
-import base64
 
 def select_printer_and_print(qr_image):
     """
@@ -98,26 +101,28 @@ def is_valid_image(image_bytes):
         return False
 
 
-def generate_html_page(data, title):
-    """Generate an HTML page dynamically from the fetched data."""
-    # Extract fields from data (assuming your logic.extract_fields function returns these)
+def generate_html_page(data, folder, title):
+    """Generate an HTML page dynamically from the fetched data and save it automatically
+       to /var/www/html/marinemuseuminfo.com/public_html as folder.title.html,
+       then return its URL (http://marinemuseuminfo.com/folder.title.html)."""
+    # Extract fields from data
     description, location, size, image_titles, biblio_ref, tags, size_components = logic.extract_fields(data)
 
-    # Additionally, get the measurement unit from data.
+    # Get the measurement unit from data, if any
     unit = ""
     if data.get("unit"):
         unit = data.get("unit").strip()
         if unit.upper() == "NULL":
             unit = ""
 
-    # Filter out fields that are the literal string "NULL"
+    # Clean fields (ignoring literal "NULL" strings)
     description = description.strip() if description and description.strip().upper() != "NULL" else ""
     location = location.strip() if location and location.strip().upper() != "NULL" else ""
     size = size.strip() if size and size.strip().upper() != "NULL" else ""
     valid_biblio = [ref for ref in biblio_ref if ref.strip().upper() != "NULL"]
     valid_tags = [tag for tag in tags if tag.strip().upper() != "NULL"]
 
-    # Filter valid images: only include images that are bytes, non-empty, and verifiable.
+    # Filter valid images (only bytes that can be verified)
     valid_images = []
     if image_titles:
         for img in image_titles:
@@ -135,7 +140,6 @@ def generate_html_page(data, title):
         """)
 
     if valid_images:
-        # Convert each valid image to a base64 data URI and embed it in an <img> tag.
         images_html = ''.join(
             f'<div class="image"><img src="data:image/jpeg;base64,{base64.b64encode(img).decode("utf-8")}" alt="Image" /></div>'
             for img in valid_images
@@ -169,10 +173,8 @@ def generate_html_page(data, title):
         """)
 
     def size_is_nonzero(size_str):
-        # Try to extract digits from a string like "Length: 0 Width: 0 Height: 0"
         import re
         numbers = re.findall(r'\d+', size_str)
-        # Return True if at least one number is nonzero
         return any(int(n) != 0 for n in numbers)
 
     if size and size.strip().upper() != "NULL" and size_is_nonzero(size):
@@ -197,7 +199,7 @@ def generate_html_page(data, title):
         </div>
         """)
 
-    # Combine all sections with updated styling
+    # Combine all sections into a full HTML document
     html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
@@ -262,64 +264,26 @@ def generate_html_page(data, title):
     </html>
     """
 
-    # Save the HTML page
-    file_path = filedialog.asksaveasfilename(
-        defaultextension=".html",
-        filetypes=[("HTML files", "*.html")],
-        title="Save HTML Page"
-    )
-    if file_path:
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(html_content)
-        print(f"HTML page saved to {file_path}")
-        open_options_window(title, file_path)  # Transition to the options window
+    # Save the HTML file in the Apache public folder
+    save_path = f"/var/www/html/marinemuseuminfo.com/public_html/{folder}.{title}.html"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    with open(save_path, "w", encoding="utf-8") as file:
+        file.write(html_content)
+    print(f"HTML page saved to {save_path}")
 
+    # Construct the URL as it will be accessed via the domain
+    url = f"http://marinemuseuminfo.com/{folder}.{title}.html"
+    return url
 
 
 def open_save_html(data, title):
-    """Open a window to prompt the user to save the HTML file."""
-    third_window = Toplevel()
-    third_window.title("Save HTML File")
-    third_window.configure(bg=config.BG_COLOR)
+    """Automatically generate and save the HTML file, then open the options window."""
+    # Get the folder name from the data; since every title should have a folder, we use it directly.
+    folder = data["folder"]
+    url = generate_html_page(data, folder, title)
+    open_options_window(title, url)
 
-    third_window.protocol("WM_DELETE_WINDOW", on_closing)
 
-    # Display the title
-    tk.Label(
-        third_window,
-        text=f"Title: {title}",
-        font=config.FONT_BOLD,
-        fg=config.TEXT_COLOR,
-        bg=config.BG_COLOR
-    ).pack(pady=10)
-
-    # Button to save the HTML file
-    tk.Button(
-        third_window,
-        text="Save HTML File",
-        font=config.FONT_BOLD,
-        bg=config.BUTTON_COLOR,
-        fg="white",
-        activebackground=config.TEXT_COLOR,
-        activeforeground="white",
-        padx=10,
-        pady=5,
-        command=lambda: [generate_html_page(data, title), third_window.destroy()]  # Pass both arguments
-    ).pack(pady=20)
-
-    # Back button
-    back_button = tk.Button(
-        third_window,
-        text="Back",
-        font=config.FONT,
-        fg=config.BUTTON_TEXT,
-        bg=config.BUTTON_COLOR,
-        command=lambda: (
-            third_window.destroy(),
-            open_what_to_do(data, title)
-        )
-    )
-    back_button.pack(pady=10)
 
 def open_options_window(title, html_path):
     """Open a window with options after saving the HTML file."""
@@ -998,4 +962,3 @@ def open_main_menu_window():
 if __name__ == "__main__":
     #mysql_login_window()  # Prompt for MySQL credentials
     open_main_menu_window()
-
