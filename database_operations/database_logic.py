@@ -143,6 +143,14 @@ def send_to_database(folder, title, description, references, location, size, tag
     #Using prepared statements to handle escaping and insertion of binary data safely
     # Prepare the SQL query with placeholders for the values
     # Collect all the data into a tuple
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+    
     if id_numb is not None:
         query = (f"UPDATE {folder} SET title=%s, description=%s, location=%s, reference_1=%s, reference_2=%s, reference_3=%s, "
                  f"reference_4=%s, reference_5=%s, reference_6=%s, reference_7=%s, reference_8=%s, reference_9=%s,"
@@ -158,26 +166,37 @@ def send_to_database(folder, title, description, references, location, size, tag
         # I am assuming here that there can't be 2 entries with the same title
         full_hash = hashlib.sha256(title.encode()).hexdigest()
         id_num = full_hash[:10]
-        query = (f"INSERT INTO {folder} (title, description, id_num, img_name1, img_name2, img_name3, img_name4, img_name5, "
-                 f"img_1, img_2, img_3, img_4, img_5, location, reference_1, reference_2, reference_3, reference_4, "
-                 f"reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
-                 f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, length, "
-                 f"width, height, unit) "
-                 f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-                 f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
-        data = (title, description, id_num, image_titles[0], image_titles[1], image_titles[2], image_titles[3], image_titles[4],
-                images[0], images[1], images[2], images[3], images[4], location, refs[0], refs[1], refs[2], refs[3], refs[4],
-                refs[5], refs[6], refs[7], refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4],
-                new_tags[5], new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
-                new_tags[13], new_tags[14], length, width, height, unit)
+        query = f"""
+            SELECT id_num
+            FROM `{folder}`
+            WHERE title = %s
+            """
+        cursor=connection.cursor()
+        cursor.execute(query, (title,))
+        result = cursor.fetchone()
+        """Empty result, no matching titles found in folder"""
+        if result is None:
 
-    connection = mysql.connector.connect(
-        host="localhost",
-        user=config.mysql_username,
-        password=config.mysql_password,
-        database="museum_db",
-        use_pure=True
-    )
+            query = (f"INSERT INTO {folder} (title, description, id_num, img_name1, img_name2, img_name3, img_name4, img_name5, "
+                        f"img_1, img_2, img_3, img_4, img_5, location, reference_1, reference_2, reference_3, reference_4, "
+                        f"reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
+                        f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, length, "
+                        f"width, height, unit) "
+                        f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                        f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
+            data = (title, description, id_num, image_titles[0], image_titles[1], image_titles[2], image_titles[3], image_titles[4],
+                    images[0], images[1], images[2], images[3], images[4], location, refs[0], refs[1], refs[2], refs[3], refs[4],
+                    refs[5], refs[6], refs[7], refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4],
+                    new_tags[5], new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
+                    new_tags[13], new_tags[14], length, width, height, unit)
+        else:
+            print("DUPLICATE TITLE")
+            connection.commit()
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+            return False  
+
 
     cursor = connection.cursor()
     #Execute with prepared statement
@@ -187,6 +206,7 @@ def send_to_database(folder, title, description, references, location, size, tag
     if connection.is_connected():
         cursor.close()
         connection.close()
+    return True
 
 """
 Helper functions to add images
