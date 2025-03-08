@@ -1153,6 +1153,21 @@ def modification_abort_new(window_4):
 
     abort_window.mainloop()
 
+def test():
+    connection = mysql.connector.connect(
+        host="localhost",
+        user=config.mysql_username,
+        password=config.mysql_password,
+        database="museum_db",
+        use_pure=True
+    )
+    cursor = connection.cursor()
+    cursor.execute("""SELECT reference_1, reference_2, reference_3, reference_4, reference_5, 
+    reference_6, reference_7, reference_8, reference_9, reference_10 FROM FakeNews WHERE title='test of noo table; Unga-Bunga' """)
+    refs = cursor.fetchall()
+    mike = 4
+
 
 if __name__ == "__main__":
-    make_new_entry()
+    test()
+    #make_new_entry()
