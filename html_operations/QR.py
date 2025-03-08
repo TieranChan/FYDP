@@ -16,6 +16,7 @@ import mysql.connector
 from tkinter import messagebox
 import config
 from html_operations import logic
+import base64
 
 #For Printer
 import subprocess
@@ -681,8 +682,7 @@ def open_modify_delete_window(title):
     description = data.get("description") if data else ""  # Default to an empty string if no description
     # Laplante here, adding images into information sent to modification and passing the hashed id number.
     # No hash= brand new entry. The hash is what I use to tell SQL which entry to update.
-    images = [f"Existing Image {i}" for i in range(1, 6)
-              if data.get(f"img_{i}") != b'NULL']
+    image_names = [data.get(f"img_name{i}") for i in range(1, 6) if data.get(f"img_name{i}") != "NULL"]
     id_num = data.get("id_num")
     references = [
         data.get(f"reference_{i}") for i in range(1, 11)
@@ -735,7 +735,7 @@ def open_modify_delete_window(title):
         pady=5,
         command=lambda: [
             modify_delete_window.destroy(),
-            Database.send_to_db_window(title, description, references, location, size, tags, images, id_num, unit),
+            Database.send_to_db_window(title, description, references, location, size, tags, image_names, id_num, unit),
         ]  # Pass title, description, and references
     ).pack(pady=10)
 
