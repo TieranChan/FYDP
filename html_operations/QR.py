@@ -272,7 +272,7 @@ def generate_html_page(data, folder, title):
     print(f"HTML page saved to {save_path}")
 
     # Construct the URL as it will be accessed via the domain
-    url = f"http://192.168.100.1/{folder}{title}.html"
+    url = f"http://marinemuseuminfo.com/{folder}{title}.html"
     return url
 
 
@@ -677,6 +677,7 @@ def open_what_to_do(data, table):
 
 def open_modify_delete_window(title):
     """Open a window for modifying or deleting the selected entry."""
+    print("MODIFYING")
     data, table = logic.fetch_data_for_title_dynamic(title)
     description = data.get("description") if data else ""  # Default to an empty string if no description
     # Laplante here, adding images into information sent to modification and passing the hashed id number.
@@ -963,5 +964,5 @@ def open_main_menu_window():
     main_menu_window.mainloop()
 
 if __name__ == "__main__":
-    #mysql_login_window()  # Prompt for MySQL credentials
-    open_main_menu_window()
+    mysql_login_window()  # Prompt for MySQL credentials
+    #open_main_menu_window()

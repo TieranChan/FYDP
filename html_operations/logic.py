@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, Toplevel, Scrollbar, Listbox
-from PIL import Image
+from tkinter import Image
+from PIL import Image, ImageTk
 from io import BytesIO
 import segno
 import webbrowser

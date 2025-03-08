@@ -42,10 +42,19 @@ def final_check_window(title, description, image_titles, biblio_ref, location, s
         label = tk.Label(second_frame, text=text, font=label_font, fg=fg, bg=bg)
         label.pack(pady=10, anchor="center")
         return label
+    
+    def is_valid_units():
+        """Return false if the size dictionary does not exist"""
+        if size is None:
+            print ("NO SIZE")
+            return False
+        else:
+            return True
 
     # Display title (assumed to be always valid)
     create_centered_label("The title is:", font=config.FONT_BOLD, fg=config.TEXT_COLOR)
     create_centered_label(title, font=config.FONT)
+    is_valid_units()
 
     # Display description if valid; otherwise, show a message indicating no description
     if is_valid(description):
@@ -238,12 +247,23 @@ def send_to_db_window(title="", description="", references=None, location="", si
 
         # Validate the measurement unit field BEFORE destroying window_4
         unit_val = unit_entry.get().strip()
+        """Check if sizes are set """
+        
         if unit_val:
             if len(unit_val) > 10:
                 size_error.config(text="Measurement unit must be 10 characters or less", fg="red")
                 is_valid = False
+            
             else:
                 size_dict["Unit"] = unit_val
+       
+        print(size_dict["Height"])
+        if(size_dict["Height"] != "" and not unit_val):
+            size_error.config(text="Need measurements for units!", fg="red")
+            is_valid = False
+
+                
+            
 
         tags_val = [entry.get().strip() for entry in keyword_entries if entry.get().strip()]
 
@@ -623,7 +643,8 @@ def open_select_where_to_store_window(title="", description="", references=None,
     def send_to_selected_folder():
         try:
             selected_folder = folder_listbox.get(folder_listbox.curselection())
-            send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num, unit)
+            if send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num, unit) is False:
+                tk.messagebox.showwarning("Title Error", "Duplicate title in Folder!")
             select_window.destroy()
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
