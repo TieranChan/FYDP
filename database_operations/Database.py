@@ -569,7 +569,39 @@ def send_to_db_window(title="", description="", references=None, location="", si
     window_4.mainloop()
 
 
-def open_select_where_to_store_window(title="", description="", references=None, location="", size="", tags="", image_titles=None, id_num=None, unit=None):
+def change_title_window(old_title, on_title_change):
+    """Opens a window that lets the user change the title.
+    on_title_change is a callback receiving the new title.
+    """
+    ct_window = tk.Toplevel()
+    ct_window.title("Change Title")
+    ct_window.geometry("400x150")
+    ct_window.configure(bg=config.BG_COLOR)
+    ct_window.transient()  # Optional: make transient to its parent if needed
+    ct_window.grab_set()  # Modal behavior
+
+    tk.Label(ct_window, text="Enter new title:", font=config.FONT_BOLD,
+             bg=config.BG_COLOR, fg=config.TEXT_COLOR).pack(pady=10)
+    title_entry = tk.Entry(ct_window, font=config.FONT, bg=config.ENTRY_COLOR,
+                           fg=config.TEXT_COLOR, width=40)
+    title_entry.insert(0, old_title)
+    title_entry.pack(pady=5)
+
+    def on_ok():
+        new_title = title_entry.get().strip()
+        if not new_title:
+            tk.messagebox.showwarning("Input Error", "Title cannot be empty!")
+            return
+        ct_window.destroy()
+        on_title_change(new_title)
+
+    tk.Button(ct_window, text="OK", font=config.FONT_BOLD,
+              bg=config.BUTTON_COLOR, fg="white", command=on_ok).pack(pady=10)
+
+
+def open_select_where_to_store_window(title="", description="", references=None,
+                                      location="", size="", tags="", image_titles=None,
+                                      id_num=None, unit=None):
     """Open a window to select where to store the data."""
     select_window = tk.Tk()
     select_window.title("Select Folder to Store Data")
@@ -582,6 +614,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
         bg=config.BG_COLOR,
         fg=config.TEXT_COLOR
     ).pack(pady=20)
+
     folder_frame = tk.Frame(select_window, bg=config.BG_COLOR)
     folder_frame.pack(pady=10)
     folder_listbox = tk.Listbox(
@@ -598,12 +631,15 @@ def open_select_where_to_store_window(title="", description="", references=None,
     folder_scrollbar = tk.Scrollbar(folder_frame, orient="vertical", command=folder_listbox.yview)
     folder_scrollbar.pack(side="right", fill="y")
     folder_listbox.config(yscrollcommand=folder_scrollbar.set)
+
     def refresh_folder_list():
         folder_listbox.delete(0, "end")
         folders = logic.get_folders()
         for folder in folders:
             folder_listbox.insert("end", folder)
+
     refresh_folder_list()
+
     def create_new_folder():
         folder_name = folder_name_entry.get().strip()
         if folder_name:
@@ -616,6 +652,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
                 tk.messagebox.showerror("Error", f"Failed to create folder: {e}")
         else:
             tk.messagebox.showwarning("Input Error", "Folder name cannot be empty!")
+
     tk.Label(
         select_window,
         text="Create a new folder:",
@@ -625,7 +662,8 @@ def open_select_where_to_store_window(title="", description="", references=None,
     ).pack(pady=10)
     new_folder_frame = tk.Frame(select_window, bg=config.BG_COLOR)
     new_folder_frame.pack(pady=10)
-    folder_name_entry = tk.Entry(new_folder_frame, font=config.FONT, bg=config.ENTRY_COLOR, fg=config.TEXT_COLOR, width=20)
+    folder_name_entry = tk.Entry(new_folder_frame, font=config.FONT,
+                                 bg=config.ENTRY_COLOR, fg=config.TEXT_COLOR, width=20)
     folder_name_entry.pack(side="left", padx=5)
     tk.Button(
         new_folder_frame,
@@ -639,10 +677,50 @@ def open_select_where_to_store_window(title="", description="", references=None,
     def send_to_selected_folder():
         try:
             selected_folder = folder_listbox.get(folder_listbox.curselection())
-            # If sending to the database returns False, display warning and return False
-            if send_to_database(selected_folder, title, description, references, location, size, tags, image_titles,
-                                id_num, unit) is False:
-                tk.messagebox.showwarning("Title Error", "Duplicate title in Folder!")
+            # Try to send to the database. If it returns False, a duplicate title exists.
+            if send_to_database(selected_folder, title, description, references, location,
+                                size, tags, image_titles, id_num, unit) is False:
+                # Create a modal dialog for duplicate title handling.
+                duplicate_dialog = tk.Toplevel(select_window)
+                duplicate_dialog.title("Duplicate Title")
+                duplicate_dialog.geometry("300x150")
+                duplicate_dialog.configure(bg=config.BG_COLOR)
+                duplicate_dialog.transient(select_window)
+                duplicate_dialog.grab_set()
+                tk.Label(duplicate_dialog,
+                         text="Duplicate title in folder.\nWould you like to change the title\nor change folders?",
+                         font=config.FONT, bg=config.BG_COLOR, fg=config.TEXT_COLOR,
+                         justify="center").pack(pady=10)
+                btn_frame = tk.Frame(duplicate_dialog, bg=config.BG_COLOR)
+                btn_frame.pack(pady=10)
+
+                # Callback to attempt re-sending data with the new title.
+                def attempt_resend(new_title):
+                    if send_to_database(selected_folder, new_title, description, references,
+                                        location, size, tags, image_titles, id_num, unit) is False:
+                        tk.messagebox.showwarning("Title Error", "Duplicate title exists even after change!")
+                        # Optionally, reopen the change title window:
+                        change_title_window(new_title, attempt_resend)
+                    else:
+                        select_window.destroy()
+                        QR.open_main_menu_window()
+
+                def on_change_title():
+                    print("chaning title")
+                    duplicate_dialog.destroy()
+                    change_title_window(title, lambda new_title: attempt_resend(new_title))
+
+                def on_change_folders():
+                    duplicate_dialog.destroy()
+                    tk.messagebox.showinfo("Change Folder", "Please select a different folder.")
+                    # User remains in select_window to choose another folder.
+
+                tk.Button(btn_frame, text="Change Title", font=config.FONT_BOLD,
+                          bg=config.BUTTON_COLOR, fg="white", padx=10, pady=5,
+                          command=on_change_title).pack(side="left", padx=5)
+                tk.Button(btn_frame, text="Change Folders", font=config.FONT_BOLD,
+                          bg=config.BUTTON_COLOR, fg="white", padx=10, pady=5,
+                          command=on_change_folders).pack(side="right", padx=5)
                 return False
             select_window.destroy()
             return True  # Successfully sent
@@ -662,7 +740,6 @@ def open_select_where_to_store_window(title="", description="", references=None,
         pady=5,
         command=lambda: send_to_selected_folder() and QR.open_main_menu_window()
     )
-
     send_to_db_button.pack(pady=20)
     select_window.mainloop()
 
