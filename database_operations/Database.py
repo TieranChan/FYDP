@@ -635,14 +635,20 @@ def open_select_where_to_store_window(title="", description="", references=None,
         fg="white",
         command=create_new_folder
     ).pack(side="left", padx=5)
+
     def send_to_selected_folder():
         try:
             selected_folder = folder_listbox.get(folder_listbox.curselection())
-            if send_to_database(selected_folder, title, description, references, location, size, tags, image_titles, id_num, unit) is False:
+            # If sending to the database returns False, display warning and return False
+            if send_to_database(selected_folder, title, description, references, location, size, tags, image_titles,
+                                id_num, unit) is False:
                 tk.messagebox.showwarning("Title Error", "Duplicate title in Folder!")
+                return False
             select_window.destroy()
+            return True  # Successfully sent
         except tk.TclError:
             tk.messagebox.showwarning("Selection Error", "Please select a folder before proceeding.")
+            return False
 
     send_to_db_button = tk.Button(
         select_window,
@@ -654,10 +660,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (
-            send_to_selected_folder(),
-            QR.open_main_menu_window()
-        )
+        command=lambda: send_to_selected_folder() and QR.open_main_menu_window()
     )
 
     send_to_db_button.pack(pady=20)

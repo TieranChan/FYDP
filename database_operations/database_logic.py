@@ -80,7 +80,10 @@ def image_format(images, id_numb, folder):
                 connection.commit()
     else:
         for i in range(len(images)):
-            image_data[i]=decode_data(images[i])
+            if images[i].strip().upper() == "NULL":
+                image_data[i] = "NULL"
+            else:
+                image_data[i] = decode_data(images[i])
             images[i] = images[i].split('/')[-1]
 
         while len(images) < 5:

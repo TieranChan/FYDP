@@ -964,5 +964,6 @@ def open_main_menu_window():
     main_menu_window.mainloop()
 
 if __name__ == "__main__":
-    mysql_login_window()  # Prompt for MySQL credentials
-    #open_main_menu_window()
+    #mysql_login_window()  # Prompt for MySQL credentials
+    open_main_menu_window()
+
