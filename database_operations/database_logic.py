@@ -48,6 +48,7 @@ def image_format(images, id_numb, folder):
     cursor = connection.cursor()
 
     image_data = ["NULL"] * 5
+    image_names = ["NULL"] * 5
     if id_numb is not None:
         #Names will contain all the img_name fields including NULL
         cursor.execute(f"SELECT img_name1, img_name2, img_name3, img_name4, img_name5 FROM {folder} WHERE id_num=\'{id_numb}\';")
@@ -84,15 +85,12 @@ def image_format(images, id_numb, folder):
                 image_data[i] = "NULL"
             else:
                 image_data[i] = decode_data(images[i])
-            images[i] = images[i].split('/')[-1]
-
-        while len(images) < 5:
-            images.append("NULL")
+                image_names[i] = images[i].split('/')[-1]
 
     if connection.is_connected():
         cursor.close()
         connection.close()
-    return image_data, images
+    return image_data, image_names
 
 def refs_format(refs):
     """This function extracts the current references into a list of ten elements which include the references and NULLs"""
@@ -132,20 +130,6 @@ This function,as the name indicates, sends data to the database. That is both in
 the modification of an existing entry.
 """
 def send_to_database(folder, title, description, references, location, size, tags, image_titles, id_numb, unit):
-    #Laplante here, I need to use the og id_num value of an entry while modifying this allows staff to change the title
-    #of an entry should they wish to. id_numb is the og id, id_num is one generated for a new entry. As per Chan's design,
-    #we need to let staff know that they must never reuse a title... at least in the same folder.
-    images, image_titles= image_format(image_titles, id_numb, folder)
-    refs = refs_format(references)
-    new_tags = tag_format(tags)
-    length, width, height = get_dims(size)
-
-    if unit is None:
-        unit="NULL"
-
-    #Using prepared statements to handle escaping and insertion of binary data safely
-    # Prepare the SQL query with placeholders for the values
-    # Collect all the data into a tuple
     connection = mysql.connector.connect(
         host="localhost",
         user=config.mysql_username,
@@ -153,7 +137,41 @@ def send_to_database(folder, title, description, references, location, size, tag
         database="museum_db",
         use_pure=True
     )
-    
+    # Laplante here, I need to use the og id_num value of an entry while modifying. This allows staff to change the title
+    # of an entry should they wish to. id_numb is the og id, id_num is one generated for a new entry. The code immediately
+    # below ensures that staff won't be making duplicate titles in an entry. Yes, a staff can have "aa" and "AA", switch
+    # "AA" to "BB", then "aa" to "AA", both modify and fetch_data_dynamically still work because the titles are always
+    # unique and the hashes are never changed, so an entry doesn't lose its identity in the background.
+
+    # Checking for duplicate titles. This logic works for both adding and modifying an entry.
+    query = f"""
+                SELECT id_num
+                FROM `{folder}`
+                WHERE title = %s
+                """
+    cursor = connection.cursor()
+    cursor.execute(query, (title,))
+    result = cursor.fetchone()
+
+    if result is not None:
+        if id_numb is None:
+            print("DUPLICATE TITLE")
+        else:
+            print("Updated title currently in use")
+        connection.commit()
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+        return False
+
+    images, stripped_image_titles= image_format(image_titles, id_numb, folder)
+    refs = refs_format(references)
+    new_tags = tag_format(tags)
+    length, width, height = get_dims(size)
+
+    if unit is None:
+        unit="NULL"
+
     if id_numb is not None:
         query = (f"UPDATE {folder} SET title=%s, description=%s, location=%s, reference_1=%s, reference_2=%s, reference_3=%s, "
                  f"reference_4=%s, reference_5=%s, reference_6=%s, reference_7=%s, reference_8=%s, reference_9=%s,"
@@ -169,39 +187,23 @@ def send_to_database(folder, title, description, references, location, size, tag
         # I am assuming here that there can't be 2 entries with the same title
         full_hash = hashlib.sha256(title.encode()).hexdigest()
         id_num = full_hash[:10]
-        query = f"""
-            SELECT id_num
-            FROM `{folder}`
-            WHERE title = %s
-            """
-        cursor=connection.cursor()
-        cursor.execute(query, (title,))
-        result = cursor.fetchone()
-        """Empty result, no matching titles found in folder"""
-        if result is None:
+        # Using prepared statements to handle escaping and insertion of binary data safely
+        # Prepare the SQL query with placeholders for the values
+        # Collect all the data into a tuple
+        query = (f"INSERT INTO {folder} (title, description, id_num, img_name1, img_name2, img_name3, img_name4, img_name5, "
+                    f"img_1, img_2, img_3, img_4, img_5, location, reference_1, reference_2, reference_3, reference_4, "
+                    f"reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
+                    f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, length, "
+                    f"width, height, unit) "
+                    f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
+                    f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
+        data = (title, description, id_num, stripped_image_titles[0], stripped_image_titles[1], stripped_image_titles[2],
+                stripped_image_titles[3], stripped_image_titles[4], images[0], images[1], images[2], images[3], images[4],
+                location, refs[0], refs[1], refs[2], refs[3], refs[4], refs[5], refs[6], refs[7], refs[8], refs[9],
+                new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4], new_tags[5], new_tags[6], new_tags[7],
+                new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12], new_tags[13], new_tags[14],
+                length, width, height, unit)
 
-            query = (f"INSERT INTO {folder} (title, description, id_num, img_name1, img_name2, img_name3, img_name4, img_name5, "
-                        f"img_1, img_2, img_3, img_4, img_5, location, reference_1, reference_2, reference_3, reference_4, "
-                        f"reference_5, reference_6, reference_7, reference_8, reference_9, reference_10, tag_1, tag_2, tag_3, "
-                        f"tag_4, tag_5, tag_6, tag_7, tag_8, tag_9, tag_10, tag_11, tag_12, tag_13, tag_14, tag_15, length, "
-                        f"width, height, unit) "
-                        f"VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, "
-                        f"%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);")
-            data = (title, description, id_num, image_titles[0], image_titles[1], image_titles[2], image_titles[3], image_titles[4],
-                    images[0], images[1], images[2], images[3], images[4], location, refs[0], refs[1], refs[2], refs[3], refs[4],
-                    refs[5], refs[6], refs[7], refs[8], refs[9], new_tags[0], new_tags[1], new_tags[2], new_tags[3], new_tags[4],
-                    new_tags[5], new_tags[6], new_tags[7], new_tags[8], new_tags[9], new_tags[10], new_tags[11], new_tags[12],
-                    new_tags[13], new_tags[14], length, width, height, unit)
-        else:
-            print("DUPLICATE TITLE")
-            connection.commit()
-            if connection.is_connected():
-                cursor.close()
-                connection.close()
-            return False  
-
-
-    cursor = connection.cursor()
     #Execute with prepared statement
     cursor.execute(query,data)
     connection.commit()

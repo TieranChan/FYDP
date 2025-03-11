@@ -683,7 +683,7 @@ def open_select_where_to_store_window(title="", description="", references=None,
                 # Create a modal dialog for duplicate title handling.
                 duplicate_dialog = tk.Toplevel(select_window)
                 duplicate_dialog.title("Duplicate Title")
-                duplicate_dialog.geometry("300x150")
+                duplicate_dialog.geometry("375x150")
                 duplicate_dialog.configure(bg=config.BG_COLOR)
                 duplicate_dialog.transient(select_window)
                 duplicate_dialog.grab_set()
