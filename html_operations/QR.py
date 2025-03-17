@@ -466,7 +466,7 @@ def confirm_delete(table, title, parent_window):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda : (confirm_window.destroy(), parent_window.destroy(), open_modify_delete_window(title))
+        command=lambda : (confirm_window.destroy(), parent_window.destroy(), open_modify_delete_window(title, table))
     ).pack(side="right", padx=20, pady=10)
 
 
@@ -474,6 +474,7 @@ def open_select_window():
     root = tk.Tk()
     root.title("Select Folder and Title")
     root.configure(bg=config.BG_COLOR)
+    selected_folder = ""
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -540,6 +541,10 @@ def open_select_window():
 
     def update_titles(event):
         """Update the titles listbox based on the selected folder."""
+        # Having this here allows for selected_folder to be stored in the outer scope
+        # which can then be passed to on_search(). Since this function is bound to an event,
+        # it will not receive additionnal arguments
+        nonlocal selected_folder
         try:
             # Check if a folder is selected
             if not folder_listbox.curselection():
@@ -564,7 +569,7 @@ def open_select_window():
     folder_listbox.bind("<<ListboxSelect>>", update_titles)
 
     def on_search():
-        """Fetch data for the selected title and open the next window."""
+        """Fetch data for the selected title and folder and open the next window."""
         try:
             # Validate title selection
             if not title_listbox.curselection():
@@ -575,11 +580,11 @@ def open_select_window():
             selected_title = title_listbox.get(title_listbox.curselection())
 
             # Fetch data for the selected title
-            data, table = logic.fetch_data_for_title_dynamic(selected_title)
+            data = logic.fetch_data_for_title_dynamic(selected_title, selected_folder)
 
             if data:
                 root.withdraw()
-                open_what_to_do(data, table)  # Pass the data and title to the next window
+                open_what_to_do(data, selected_folder)  # Pass the data and title to the next window
             else:
                 messagebox.showinfo("No Data Found", f"No data found for the title: {selected_title}")
 
@@ -644,7 +649,7 @@ def open_what_to_do(data, table):
         activeforeground="white",
         padx=10,
         pady=5,
-        command=lambda: (open_modify_delete_window(title), what_to_do_window.destroy())
+        command=lambda: (open_modify_delete_window(title, table), what_to_do_window.destroy())
     ).pack(pady=10)
 
     # Generate HTML/QR Button
@@ -676,10 +681,9 @@ def open_what_to_do(data, table):
     back_button.pack(pady=10)
 
 
-def open_modify_delete_window(title):
+def open_modify_delete_window(title, table):
     """Open a window for modifying or deleting the selected entry."""
-    print("MODIFYING")
-    data, table = logic.fetch_data_for_title_dynamic(title)
+    data = logic.fetch_data_for_title_dynamic(title, table)
     description = data.get("description") if data else ""  # Default to an empty string if no description
     # Laplante here, adding images into information sent to modification and passing the hashed id number.
     # No hash= brand new entry. The hash is what I use to tell SQL which entry to update.

@@ -154,15 +154,16 @@ def send_to_database(folder, title, description, references, location, size, tag
     result = cursor.fetchone()
 
     if result is not None:
-        if id_numb is None:
-            print("DUPLICATE TITLE")
-        else:
-            print("Updated title currently in use")
-        connection.commit()
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-        return False
+        if id_numb != result[0]:
+            if id_numb is None:
+                print("Duplicate title")
+            else:
+                print("Updated title currently in use")
+            connection.commit()
+            if connection.is_connected():
+                cursor.close()
+                connection.close()
+            return False
 
     images, stripped_image_titles= image_format(image_titles, id_numb, folder)
     refs = refs_format(references)
